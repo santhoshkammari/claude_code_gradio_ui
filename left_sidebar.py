@@ -1,5 +1,4 @@
-import gradio as gr
-import state
+from a import gr
 
 def create_left_sidebar():
     with gr.Column():

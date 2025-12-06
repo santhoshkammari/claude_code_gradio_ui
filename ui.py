@@ -1,15 +1,20 @@
-import gradio as gr
+from a import gr
+
 from left_sidebar import create_left_sidebar
-from main_content import create_main_content
 from right_sidebar import create_right_sidebar
+from tab_main import tab_main
 
 with gr.Blocks() as demo:
-    with gr.Sidebar(position="left"):
+    with gr.Sidebar(position="left",width='15%'):
         create_left_sidebar()
 
-    create_main_content()
+    with gr.Column():
+        with gr.Tab('Task'):
+            tab_main()
+        with gr.Tab('History'):
+            tab_main()
 
-    with gr.Sidebar(position="right", width=450):
+    with gr.Sidebar(position="right", width="28%"):
         create_right_sidebar()
 
 demo.launch()

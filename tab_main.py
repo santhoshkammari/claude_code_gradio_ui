@@ -1,7 +1,10 @@
-import gradio as gr
+from a import gr
+
+import time
+import random
 
 def tab_main():
-    with gr.Column():
-        gr.Textbox(label="Input", placeholder="Enter something...")
-        gr.Button("Submit")
-
+    with gr.Blocks() as demo:
+        with gr.Row():
+            msg = gr.Textbox()
+            clear = gr.Button("Clear")
