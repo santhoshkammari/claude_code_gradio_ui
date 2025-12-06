@@ -14,7 +14,7 @@ with gr.Blocks() as demo:
         with gr.Tab('History'):
             tab_main()
 
-    with gr.Sidebar(position="right", width="28%"):
+    with gr.Sidebar(position="right", width="29%"):
         create_right_sidebar()
 
 demo.launch()
