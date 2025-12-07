@@ -72,18 +72,11 @@ def add_task(title, category):
 
 with gr.Blocks() as demo:
 
-    with gr.Sidebar(open=False):
+    with gr.Sidebar(open=True):
         gr.Textbox()
 
     with gr.Sidebar(position='right',open=False):
         gr.Textbox()
-
-    gr.HTML("""
-    <div style="text-align: center; padding: 20px 0;">
-        <h1 style="font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 8px;">📝 Scratchpad</h1>
-        <p style="color: #6b7280; font-size: 14px;">Manage your tasks efficiently</p>
-    </div>
-    """)
 
     with gr.Tabs():
         with gr.Tab("Active"):
