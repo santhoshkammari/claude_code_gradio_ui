@@ -17,11 +17,17 @@ def bot(history: list):
 
 
 def create_right_sidebar():
-    with gr.Blocks():
+    with gr.Accordion("Chatbot", open=True):
         chatbot = gr.Chatbot()
         msg = gr.Textbox()
         msg.submit(user, [msg, chatbot], [msg, chatbot], queue=False).then(
          bot, chatbot, chatbot
         )
+    # with gr.Blocks():
+    #     chatbot = gr.Chatbot()
+    #     msg = gr.Textbox()
+    #     msg.submit(user, [msg, chatbot], [msg, chatbot], queue=False).then(
+    #      bot, chatbot, chatbot
+    #     )
     
 
