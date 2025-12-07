@@ -72,10 +72,10 @@ def add_task(title, category):
 
 with gr.Blocks() as demo:
 
-    with gr.Sidebar(open=True):
+    with gr.Sidebar(open=True, position='left'):
         gr.Textbox()
 
-    with gr.Sidebar(position='right',open=False):
+    with gr.Sidebar(position='right',open=True):
         gr.Textbox()
 
     with gr.Tabs():
