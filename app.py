@@ -1,9 +1,49 @@
 import gradio as gr
 import json
+import asyncio
+import threading
 from datetime import datetime
 from pathlib import Path
+from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions, AssistantMessage, TextBlock
 
 tasks_file = Path("tasks.json")
+client = None
+loop = None
+
+def init_event_loop():
+    global loop
+    if loop is None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        threading.Thread(target=loop.run_forever, daemon=True).start()
+
+async def init_claude():
+    global client
+    if not client:
+        client = ClaudeSDKClient(ClaudeAgentOptions(
+            allowed_tools=["Read", "Write", "Bash", "Grep"],
+            permission_mode="acceptEdits"
+        ))
+        await client.connect()
+
+async def chat_claude(msg, history):
+    await init_claude()
+    await client.query(msg)
+    response = ""
+    async for m in client.receive_response():
+        if isinstance(m, AssistantMessage):
+            for b in m.content:
+                if isinstance(b, TextBlock):
+                    response += b.text
+    history = history or []
+    history.append({"role": "user", "content": msg})
+    history.append({"role": "assistant", "content": response})
+    return history
+
+def chat_sync(msg, history):
+    init_event_loop()
+    future = asyncio.run_coroutine_threadsafe(chat_claude(msg, history), loop)
+    return future.result()
 
 def load_tasks():
     if tasks_file.exists():
@@ -13,54 +53,98 @@ def load_tasks():
 def save_tasks(tasks):
     tasks_file.write_text(json.dumps(tasks, indent=2))
 
-def get_task_card(task, category):
-    replies = task.get("replies", 0)
+def get_task_card(task, category, idx):
+    task_id = task.get("id", "TASK-001")
     time = task.get("time", "Just now")
+    description = task.get("description", "")
 
     card_html = f"""
-    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-        <div style="display: flex; align-items: start; gap: 12px;">
-            <div style="width: 32px; height: 32px; background: #3b82f6; border-radius: 6px; flex-shrink: 0;"></div>
-            <div style="flex: 1;">
-                <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 4px;">{task['title']}</div>
-                <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280;">
-                    <span>👤 {replies} replies</span>
-                    <span>•</span>
-                    <span>{time}</span>
-                </div>
-            </div>
+    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;" id="{task_id}">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="font-size: 13px; color: #6b7280;">📋 {task_id}</span>
+            <span style="font-size: 12px; color: #9ca3af;">{time}</span>
+        </div>
+        <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 6px;">{task['title']}</div>
+        {f'<div style="font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 12px;">{description}</div>' if description else ''}
+        <div style="display: flex; gap: 8px;">
+            <button onclick="navigator.clipboard.writeText('delete:{task_id}')"
+                style="background: #ef4444; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">Delete</button>
+            <button onclick="navigator.clipboard.writeText('start:{task_id}')"
+                style="background: #3b82f6; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">Start →</button>
         </div>
     </div>
     """
     return card_html
 
-def render_tasks(category):
+def delete_task(task_id, category):
+    tasks = load_tasks()
+    tasks[category] = [t for t in tasks.get(category, []) if t.get("id") != task_id]
+    save_tasks(tasks)
+    return render_backlog(category), render_needs_review(category)
+
+def start_task(task_id, category):
+    tasks = load_tasks()
+    for t in tasks.get(category, []):
+        if t.get("id") == task_id:
+            t["status"] = "in_progress"
+            t["section"] = "needs_review"
+    save_tasks(tasks)
+    return render_backlog(category), render_needs_review(category)
+
+def render_backlog(category):
     tasks = load_tasks()
     task_list = tasks.get(category, [])
+    backlog = [t for t in task_list if t.get("section") == "backlog"]
 
-    if not task_list:
-        return f"""
-        <div style="text-align: center; padding: 60px 20px; color: #9ca3af;">
-            <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
-            <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">No {category} tasks</div>
-            <div style="font-size: 14px;">Create a task to get started!</div>
-        </div>
-        """
+    html = f"""
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 20px; height: 20px; border: 2px solid #6b7280; border-radius: 50%;"></div>
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">Backlog</h3>
+        <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 12px; font-size: 13px; font-weight: 500;">{len(backlog)}</span>
+    </div>
+    """
 
-    html = ""
-    for task in task_list:
-        html += get_task_card(task, category)
+    if backlog:
+        for idx, task in enumerate(backlog):
+            html += get_task_card(task, category, idx)
+    else:
+        html += '<div style="text-align: center; padding: 40px; color: #9ca3af; font-size: 14px;">No backlog tasks</div>'
 
     return html
 
-def add_task(title, category):
+def render_needs_review(category):
+    tasks = load_tasks()
+    task_list = tasks.get(category, [])
+    needs_review = [t for t in task_list if t.get("section") == "needs_review"]
+
+    html = f"""
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 20px; height: 20px; background: #10b981; border-radius: 50%;"></div>
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">Needs review</h3>
+        <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 12px; font-size: 13px; font-weight: 500;">{len(needs_review)}</span>
+    </div>
+    """
+
+    if needs_review:
+        for idx, task in enumerate(needs_review):
+            html += get_task_card(task, category, idx)
+    else:
+        html += '<div style="text-align: center; padding: 40px; color: #9ca3af; font-size: 14px;">No tasks in review</div>'
+
+    return html
+
+def add_task(title, section, category):
     if not title.strip():
-        return render_tasks(category), ""
+        return render_backlog(category), render_needs_review(category), ""
 
     tasks = load_tasks()
+    task_count = len(tasks.get(category, []))
     new_task = {
+        "id": f"TASK-{task_count + 1:03d}",
         "title": title,
-        "replies": 0,
+        "section": section,
+        "description": "",
+        "status": "open",
         "time": datetime.now().strftime("%I:%M %p"),
         "created": datetime.now().isoformat()
     }
@@ -68,88 +152,94 @@ def add_task(title, category):
     tasks[category].append(new_task)
     save_tasks(tasks)
 
-    return render_tasks(category), ""
+    return render_backlog(category), render_needs_review(category), ""
 
 with gr.Blocks() as demo:
 
     with gr.Sidebar(open=True, position='left'):
         gr.Textbox()
 
-    with gr.Sidebar(position='right',open=True):
-        gr.Textbox()
+    with gr.Sidebar(position='right', open=True):
+        gr.Markdown("### Claude Agent")
+        chatbot = gr.Chatbot(height=400, show_label=False)
+        chat_input = gr.Textbox(
+            placeholder="Message Claude...",
+            show_label=False,
+            container=False
+        )
+        chat_input.submit(chat_sync, [chat_input, chatbot], [chatbot]).then(lambda: "", None, chat_input)
 
     with gr.Tabs():
         with gr.Tab("Active"):
-            with gr.Column():
-                active_tasks = gr.HTML(render_tasks("active"))
-
-                with gr.Row():
-                    active_input = gr.Textbox(
-                        placeholder="Add a new task...",
-                        show_label=False,
-                        scale=4,
-                        container=False
-                    )
-                    active_btn = gr.Button("+ Task", variant="primary", scale=1)
-
-                active_btn.click(
-                    fn=lambda x: add_task(x, "active"),
-                    inputs=[active_input],
-                    outputs=[active_tasks, active_input]
-                )
-                active_input.submit(
-                    fn=lambda x: add_task(x, "active"),
-                    inputs=[active_input],
-                    outputs=[active_tasks, active_input]
-                )
+            gr.Markdown("### Coming soon...")
 
         with gr.Tab("Done"):
-            with gr.Column():
-                done_tasks = gr.HTML(render_tasks("done"))
+            with gr.Row():
+                with gr.Column(scale=1):
+                    done_backlog = gr.HTML(render_backlog("done"))
+                with gr.Column(scale=1):
+                    done_review = gr.HTML(render_needs_review("done"))
 
-                with gr.Row():
-                    done_input = gr.Textbox(
-                        placeholder="Add a completed task...",
-                        show_label=False,
-                        scale=4,
-                        container=False
-                    )
-                    done_btn = gr.Button("+ Task", variant="primary", scale=1)
+            with gr.Row():
+                done_input = gr.Textbox(
+                    placeholder="Add a completed task...",
+                    show_label=False,
+                    scale=3,
+                    container=False
+                )
+                done_section = gr.Dropdown(
+                    choices=["backlog", "needs_review"],
+                    value="backlog",
+                    show_label=False,
+                    scale=1,
+                    container=False
+                )
+                done_btn = gr.Button("+ Task", variant="primary", scale=1)
 
-                done_btn.click(
-                    fn=lambda x: add_task(x, "done"),
-                    inputs=[done_input],
-                    outputs=[done_tasks, done_input]
-                )
-                done_input.submit(
-                    fn=lambda x: add_task(x, "done"),
-                    inputs=[done_input],
-                    outputs=[done_tasks, done_input]
-                )
+            done_btn.click(
+                fn=lambda x, s: add_task(x, s, "done"),
+                inputs=[done_input, done_section],
+                outputs=[done_backlog, done_review, done_input]
+            )
+            done_input.submit(
+                fn=lambda x, s: add_task(x, s, "done"),
+                inputs=[done_input, done_section],
+                outputs=[done_backlog, done_review, done_input]
+            )
 
         with gr.Tab("Jams"):
-            with gr.Column():
-                jams_tasks = gr.HTML(render_tasks("jams"))
+            with gr.Row():
+                with gr.Column(scale=1):
+                    jams_backlog = gr.HTML(render_backlog("jams"))
+                with gr.Column(scale=1):
+                    jams_review = gr.HTML(render_needs_review("jams"))
 
-                with gr.Row():
-                    jams_input = gr.Textbox(
-                        placeholder="Add a jam...",
-                        show_label=False,
-                        scale=4,
-                        container=False
-                    )
-                    jams_btn = gr.Button("+ Task", variant="primary", scale=1)
+            with gr.Row():
+                jams_input = gr.Textbox(
+                    placeholder="Add a jam...",
+                    show_label=False,
+                    scale=3,
+                    container=False
+                )
+                jams_section = gr.Dropdown(
+                    choices=["backlog", "needs_review"],
+                    value="backlog",
+                    show_label=False,
+                    scale=1,
+                    container=False
+                )
+                jams_btn = gr.Button("+ Task", variant="primary", scale=1)
 
-                jams_btn.click(
-                    fn=lambda x: add_task(x, "jams"),
-                    inputs=[jams_input],
-                    outputs=[jams_tasks, jams_input]
-                )
-                jams_input.submit(
-                    fn=lambda x: add_task(x, "jams"),
-                    inputs=[jams_input],
-                    outputs=[jams_tasks, jams_input]
-                )
+            jams_btn.click(
+                fn=lambda x, s: add_task(x, s, "jams"),
+                inputs=[jams_input, jams_section],
+                outputs=[jams_backlog, jams_review, jams_input]
+            )
+            jams_input.submit(
+                fn=lambda x, s: add_task(x, s, "jams"),
+                inputs=[jams_input, jams_section],
+                outputs=[jams_backlog, jams_review, jams_input]
+            )
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)
