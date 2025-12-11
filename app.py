@@ -55,34 +55,11 @@ def load_tasks():
 def save_tasks(tasks):
     tasks_file.write_text(json.dumps(tasks, indent=2))
 
-def get_task_card(task, category, idx):
-    task_id = task.get("id", "TASK-001")
-    time = task.get("time", "Just now")
-    description = task.get("description", "")
-
-    card_html = f"""
-    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;" id="{task_id}">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-            <span style="font-size: 13px; color: #6b7280;">📋 {task_id}</span>
-            <span style="font-size: 12px; color: #9ca3af;">{time}</span>
-        </div>
-        <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 6px;">{task['title']}</div>
-        {f'<div style="font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 12px;">{description}</div>' if description else ''}
-        <div style="display: flex; gap: 8px;">
-            <button onclick="navigator.clipboard.writeText('delete:{task_id}')"
-                style="background: #ef4444; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">Delete</button>
-            <button onclick="navigator.clipboard.writeText('start:{task_id}')"
-                style="background: #3b82f6; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">Start →</button>
-        </div>
-    </div>
-    """
-    return card_html
-
 def delete_task(task_id, category):
     tasks = load_tasks()
     tasks[category] = [t for t in tasks.get(category, []) if t.get("id") != task_id]
     save_tasks(tasks)
-    return render_backlog(category), render_needs_review(category)
+    return {"refresh": datetime.now().isoformat()}
 
 def start_task(task_id, category):
     tasks = load_tasks()
@@ -91,7 +68,7 @@ def start_task(task_id, category):
             t["status"] = "in_progress"
             t["section"] = "needs_review"
     save_tasks(tasks)
-    return render_backlog(category), render_needs_review(category)
+    return {"refresh": datetime.now().isoformat()}
 
 def render_backlog(category):
     tasks = load_tasks()
@@ -108,7 +85,38 @@ def render_backlog(category):
 
     if backlog:
         for idx, task in enumerate(backlog):
-            html += get_task_card(task, category, idx)
+            task_id = task.get("id", "TASK-001")
+            time = task.get("time", "Just now")
+            description = task.get("description", "")
+
+            html += f"""
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                    <span style="font-size: 13px; color: #6b7280;">📋 {task_id}</span>
+                    <span style="font-size: 12px; color: #9ca3af;">{time}</span>
+                </div>
+                <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 6px;">{task['title']}</div>
+                {f'<div style="font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 12px;">{description}</div>' if description else ''}
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="
+                        const input = document.querySelector('[data-testid*=\\'textbox\\'][style*=\\'display: none\\']');
+                        if (input && input.querySelector('textarea')) {{
+                            const textarea = input.querySelector('textarea');
+                            textarea.value = 'delete:{category}:{task_id}';
+                            textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                        }}
+                    " style="background: #ef4444; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">Delete</button>
+                    <button onclick="
+                        const input = document.querySelector('[data-testid*=\\'textbox\\'][style*=\\'display: none\\']');
+                        if (input && input.querySelector('textarea')) {{
+                            const textarea = input.querySelector('textarea');
+                            textarea.value = 'start:{category}:{task_id}';
+                            textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                        }}
+                    " style="background: #3b82f6; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">Start →</button>
+                </div>
+            </div>
+            """
     else:
         html += '<div style="text-align: center; padding: 40px; color: #9ca3af; font-size: 14px;">No backlog tasks</div>'
 
@@ -129,7 +137,30 @@ def render_needs_review(category):
 
     if needs_review:
         for idx, task in enumerate(needs_review):
-            html += get_task_card(task, category, idx)
+            task_id = task.get("id", "TASK-001")
+            time = task.get("time", "Just now")
+            description = task.get("description", "")
+
+            html += f"""
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                    <span style="font-size: 13px; color: #6b7280;">📋 {task_id}</span>
+                    <span style="font-size: 12px; color: #9ca3af;">{time}</span>
+                </div>
+                <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 6px;">{task['title']}</div>
+                {f'<div style="font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 12px;">{description}</div>' if description else ''}
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="
+                        const input = document.querySelector('[data-testid*=\\'textbox\\'][style*=\\'display: none\\']');
+                        if (input && input.querySelector('textarea')) {{
+                            const textarea = input.querySelector('textarea');
+                            textarea.value = 'delete:{category}:{task_id}';
+                            textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                        }}
+                    " style="background: #ef4444; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">Delete</button>
+                </div>
+            </div>
+            """
     else:
         html += '<div style="text-align: center; padding: 40px; color: #9ca3af; font-size: 14px;">No tasks in review</div>'
 
@@ -156,6 +187,20 @@ def add_task(title, section, category):
 
     return render_backlog(category), render_needs_review(category), ""
 
+def handle_action(command, category):
+    if not command:
+        return render_backlog(category), render_needs_review(category), ""
+
+    parts = command.split(":")
+    if len(parts) == 3:
+        action, cat, task_id = parts
+        if action == "delete":
+            return delete_task(task_id, cat) + ("",)
+        elif action == "start":
+            return start_task(task_id, cat) + ("",)
+
+    return render_backlog(category), render_needs_review(category), ""
+
 with gr.Blocks() as demo:
 
 
@@ -174,16 +219,102 @@ with gr.Blocks() as demo:
 
     with gr.Tabs():
         with gr.Tab("Active"):
-            with gr.Blocks():
-                with gr.Row(height="600px"):
-                    with gr.Column():
-                        gr.Markdown('hai')
-                    with gr.Column():
-                        gr.Markdown('hai')
+            active_state = gr.State({"refresh": datetime.now().isoformat()})
+
+            @gr.render(inputs=active_state)
+            def render_active(state):
+                tasks = load_tasks()
+                backlog = [t for t in tasks.get("active", []) if t.get("section") == "backlog"]
+                needs_review = [t for t in tasks.get("active", []) if t.get("section") == "needs_review"]
+
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        gr.HTML(f"""
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <div style="width: 20px; height: 20px; border: 2px solid #6b7280; border-radius: 50%;"></div>
+                            <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">Backlog</h3>
+                            <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 12px; font-size: 13px; font-weight: 500;">{len(backlog)}</span>
+                        </div>
+                        """)
+
+                        if backlog:
+                            for task in backlog:
+                                with gr.Group():
+                                    gr.HTML(f"""
+                                    <div style="margin-bottom: 8px;">
+                                        <span style="font-size: 13px; color: #6b7280;">📋 {task['id']}</span>
+                                        <span style="font-size: 12px; color: #9ca3af; margin-left: 8px;">{task['time']}</span>
+                                    </div>
+                                    <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 12px;">{task['title']}</div>
+                                    """)
+                                    if task.get('description'):
+                                        gr.HTML(f"<div style='font-size: 13px; color: #6b7280; margin-bottom: 12px;'>{task['description']}</div>")
+                                    with gr.Row():
+                                        del_btn = gr.Button("Delete", variant="stop", size="sm", scale=1)
+                                        start_btn = gr.Button("Start →", variant="primary", size="sm", scale=1)
+
+                                        del_btn.click(
+                                            fn=lambda tid=task['id']: delete_task(tid, "active"),
+                                            outputs=[active_state]
+                                        )
+                                        start_btn.click(
+                                            fn=lambda tid=task['id']: start_task(tid, "active"),
+                                            outputs=[active_state]
+                                        )
+                        else:
+                            gr.HTML("<div style='text-align: center; padding: 40px; color: #9ca3af;'>No backlog tasks</div>")
+
+                    with gr.Column(scale=1):
+                        gr.HTML(f"""
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <div style="width: 20px; height: 20px; background: #10b981; border-radius: 50%;"></div>
+                            <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">Needs review</h3>
+                            <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 12px; font-size: 13px; font-weight: 500;">{len(needs_review)}</span>
+                        </div>
+                        """)
+
+                        if needs_review:
+                            for task in needs_review:
+                                with gr.Group():
+                                    gr.HTML(f"""
+                                    <div style="margin-bottom: 8px;">
+                                        <span style="font-size: 13px; color: #6b7280;">📋 {task['id']}</span>
+                                        <span style="font-size: 12px; color: #9ca3af; margin-left: 8px;">{task['time']}</span>
+                                    </div>
+                                    <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 12px;">{task['title']}</div>
+                                    """)
+                                    if task.get('description'):
+                                        gr.HTML(f"<div style='font-size: 13px; color: #6b7280; margin-bottom: 12px;'>{task['description']}</div>")
+                                    del_btn = gr.Button("Delete", variant="stop", size="sm")
+                                    del_btn.click(
+                                        fn=lambda tid=task['id']: delete_task(tid, "active"),
+                                        outputs=[active_state]
+                                    )
+                        else:
+                            gr.HTML("<div style='text-align: center; padding: 40px; color: #9ca3af;'>No tasks in review</div>")
+
             with gr.Row():
-                gr.Markdown()
-                chat_input = gr.Textbox(placeholder="Hi...",show_label=False)
-                gr.Markdown()
+                active_input = gr.Textbox(
+                    placeholder="Add a task...",
+                    show_label=False,
+                    container=False
+                )
+                active_btn = gr.Button("+ Task", variant="primary")
+
+            def add_and_refresh(title):
+                add_task(title, "backlog", "active")
+                return {"refresh": datetime.now().isoformat()}, ""
+
+            active_btn.click(
+                fn=add_and_refresh,
+                inputs=[active_input],
+                outputs=[active_state, active_input]
+            )
+            active_input.submit(
+                fn=add_and_refresh,
+                inputs=[active_input],
+                outputs=[active_state, active_input]
+            )
 
         with gr.Tab("Done"):
             with gr.Row():

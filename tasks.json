@@ -1,48 +1,5 @@
 {
-  "active": [
-    {
-      "title": "fgdfgdfg",
-      "replies": 0,
-      "time": "02:42 AM",
-      "created": "2025-12-08T02:42:43.333258"
-    },
-    {
-      "title": "fgdfg",
-      "replies": 0,
-      "time": "02:42 AM",
-      "created": "2025-12-08T02:42:46.054233"
-    },
-    {
-      "title": "fgdfg",
-      "replies": 0,
-      "time": "02:42 AM",
-      "created": "2025-12-08T02:42:48.364405"
-    },
-    {
-      "title": "fgfg",
-      "replies": 0,
-      "time": "02:42 AM",
-      "created": "2025-12-08T02:42:50.482804"
-    },
-    {
-      "id": "TASK-005",
-      "title": "list the directory names in /home/ntlpt24/Documents/244_MD_Metadata",
-      "section": "needs_review",
-      "description": "",
-      "status": "in_progress",
-      "time": "03:46 AM",
-      "created": "2025-12-10T03:46:22.430442"
-    },
-    {
-      "id": "TASK-006",
-      "title": "list the directory names in /home/ntlpt24/code/dots_ocr_test",
-      "section": "backlog",
-      "description": "",
-      "status": "open",
-      "time": "03:47 AM",
-      "created": "2025-12-10T03:47:05.707385"
-    }
-  ],
+  "active": [],
   "done": [],
   "jams": []
 }
