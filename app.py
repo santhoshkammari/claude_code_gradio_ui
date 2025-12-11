@@ -158,10 +158,8 @@ def add_task(title, section, category):
 
 with gr.Blocks() as demo:
 
-    with gr.Sidebar(position='right', open=True,width="27%"):
-        gr.Markdown("### Navigation")
 
-    with gr.Sidebar(open=True, position='left',width="19%"):
+    with gr.Sidebar(position='right', open=True,width="27%"):
         gr.Markdown("### Claude Agent")
         chatbot = gr.Chatbot(height=400, show_label=False, type='messages', allow_tags=False)
         chat_input = gr.Textbox(
@@ -170,6 +168,9 @@ with gr.Blocks() as demo:
             container=False
         )
         chat_input.submit(chat_sync, [chat_input, chatbot], [chatbot]).then(lambda: "", None, chat_input)
+
+    with gr.Sidebar(open=True, position='left',width="19%"):
+        gr.Markdown("### Navigation")
 
     with gr.Tabs():
         with gr.Tab("Active"):
