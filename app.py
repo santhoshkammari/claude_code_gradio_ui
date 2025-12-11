@@ -98,6 +98,7 @@ def render_backlog(category):
                 <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 6px;">{task['title']}</div>
                 {f'<div style="font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 12px;">{description}</div>' if description else ''}
                 <div style="display: flex; gap: 8px;">
+                    <button style="background: #e5e7eb; color: #6b7280; border: none; padding: 6px 8px; border-radius: 6px; font-size: 13px; cursor: default; min-width: 36px;" disabled></button>
                     <button onclick="
                         const input = document.querySelector('[data-testid*=\\'textbox\\'][style*=\\'display: none\\']');
                         if (input && input.querySelector('textarea')) {{
@@ -105,7 +106,7 @@ def render_backlog(category):
                             textarea.value = 'delete:{category}:{task_id}';
                             textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
                         }}
-                    " style="background: #ef4444; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">Delete</button>
+                    " style="background: #ef4444; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; flex: 1;">Delete</button>
                     <button onclick="
                         const input = document.querySelector('[data-testid*=\\'textbox\\'][style*=\\'display: none\\']');
                         if (input && input.querySelector('textarea')) {{
@@ -113,7 +114,7 @@ def render_backlog(category):
                             textarea.value = 'start:{category}:{task_id}';
                             textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
                         }}
-                    " style="background: #3b82f6; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">Start →</button>
+                    " style="background: #3b82f6; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; flex: 1;">Start →</button>
                 </div>
             </div>
             """
@@ -150,6 +151,7 @@ def render_needs_review(category):
                 <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 6px;">{task['title']}</div>
                 {f'<div style="font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 12px;">{description}</div>' if description else ''}
                 <div style="display: flex; gap: 8px;">
+                    <button style="background: #e5e7eb; color: #6b7280; border: none; padding: 6px 8px; border-radius: 6px; font-size: 13px; cursor: default; min-width: 36px;" disabled></button>
                     <button onclick="
                         const input = document.querySelector('[data-testid*=\\'textbox\\'][style*=\\'display: none\\']');
                         if (input && input.querySelector('textarea')) {{
@@ -157,7 +159,8 @@ def render_needs_review(category):
                             textarea.value = 'delete:{category}:{task_id}';
                             textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
                         }}
-                    " style="background: #ef4444; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">Delete</button>
+                    " style="background: #ef4444; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; flex: 2;">Delete</button>
+                    <button style="background: #cbd5e1; color: #6b7280; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: default; flex: 1;" disabled>Start →</button>
                 </div>
             </div>
             """
@@ -249,7 +252,8 @@ with gr.Blocks() as demo:
                                     """)
                                     if task.get('description'):
                                         gr.HTML(f"<div style='font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 12px;'>{task['description']}</div>")
-                                    with gr.Row():
+                                    with gr.Row(elem_classes="no-wrap-row"):
+                                        content_btn = gr.Button("", variant="secondary", size="sm", scale=1)
                                         del_btn = gr.Button("Delete", variant="stop", size="sm", scale=1)
                                         start_btn = gr.Button("Start →", variant="primary", size="sm", scale=1)
 
@@ -414,6 +418,8 @@ if __name__ == "__main__":
                 margin-bottom: 12px !important;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02) !important;
                 transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                min-width: 0 !important;
+                flex-shrink: 1 !important;
             }
 
             .task-card:hover {
@@ -464,6 +470,34 @@ if __name__ == "__main__":
                 background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
                 transform: translateY(-2px);
                 box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35) !important;
+            }
+
+            .start-btn {
+                background: #3b82f6 !important;
+                color: white !important;
+                border: none !important;
+                border-radius: 8px !important;
+                font-weight: 500 !important;
+                font-size: 13px !important;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+
+            .start-btn:hover {
+                background: #2563eb !important;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35) !important;
+            }
+
+            .no-wrap-row {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                min-width: 0 !important;
+            }
+
+            .no-wrap-row button {
+                flex: 1 1 auto !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
             }
 
             button {

@@ -1,15 +1,6 @@
 {
   "active": [
     {
-      "id": "TASK-001",
-      "title": "sdfsdf",
-      "section": "backlog",
-      "description": "",
-      "status": "open",
-      "time": "03:32 AM",
-      "created": "2025-12-12T03:32:56.869202"
-    },
-    {
       "id": "TASK-002",
       "title": "sdfsdf",
       "section": "backlog",
@@ -19,13 +10,13 @@
       "created": "2025-12-12T03:32:58.742256"
     },
     {
-      "id": "TASK-003",
-      "title": "sdfsdfds",
+      "id": "TASK-002",
+      "title": "sdfsdf",
       "section": "backlog",
       "description": "",
       "status": "open",
-      "time": "03:33 AM",
-      "created": "2025-12-12T03:33:01.584369"
+      "time": "03:43 AM",
+      "created": "2025-12-12T03:43:07.712952"
     }
   ],
   "done": [],
