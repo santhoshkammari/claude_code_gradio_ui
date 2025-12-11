@@ -161,7 +161,7 @@ with gr.Blocks() as demo:
 
     with gr.Sidebar(position='right', open=True,width="27%"):
         gr.Markdown("### Claude Agent")
-        chatbot = gr.Chatbot(height=400, show_label=False, type='messages', allow_tags=False)
+        chatbot = gr.Chatbot(height=400, show_label=False)
         chat_input = gr.Textbox(
             placeholder="Message Claude...",
             show_label=False,
@@ -254,4 +254,11 @@ with gr.Blocks() as demo:
             )
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+        css="""
+            footer {display: none !important;}
+            .gradio-container {margin-bottom: 0 !important;}
+        """
+    )
