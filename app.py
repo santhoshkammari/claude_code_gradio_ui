@@ -241,19 +241,17 @@ with gr.Blocks() as demo:
                             for task in backlog:
                                 with gr.Group(elem_classes="task-card"):
                                     gr.HTML(f"""
-                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span style="font-size: 13px; color: #6b7280; font-weight: 500;">📋 {task['id']}</span>
-                                            <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 500;">{task['time']}</span>
-                                        </div>
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <span style="font-size: 13px; color: #9ca3af;">📋 {task['id']}</span>
+                                        <span style="font-size: 12px; color: #d1d5db;">{task['time']}</span>
                                     </div>
-                                    <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 8px; line-height: 1.4;">{task['title']}</div>
+                                    <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 12px;">{task['title']}</div>
                                     """)
                                     if task.get('description'):
-                                        gr.HTML(f"<div style='font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 14px;'>{task['description']}</div>")
+                                        gr.HTML(f"<div style='font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 12px;'>{task['description']}</div>")
                                     with gr.Row():
-                                        del_btn = gr.Button("🗑️ Delete", variant="stop", size="sm", scale=1)
-                                        start_btn = gr.Button("▶️ Start", variant="primary", size="sm", scale=1)
+                                        del_btn = gr.Button("Delete", variant="stop", size="sm", scale=1)
+                                        start_btn = gr.Button("Start →", variant="primary", size="sm", scale=1)
 
                                         del_btn.click(
                                             fn=lambda tid=task['id']: delete_task(tid, "active"),
@@ -279,17 +277,15 @@ with gr.Blocks() as demo:
                             for task in needs_review:
                                 with gr.Group(elem_classes="task-card"):
                                     gr.HTML(f"""
-                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span style="font-size: 13px; color: #6b7280; font-weight: 500;">📋 {task['id']}</span>
-                                            <span style="background: #d1fae5; color: #059669; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 500;">In Review</span>
-                                        </div>
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <span style="font-size: 13px; color: #9ca3af;">📋 {task['id']}</span>
+                                        <span style="font-size: 12px; color: #d1d5db;">In Review</span>
                                     </div>
-                                    <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 8px; line-height: 1.4;">{task['title']}</div>
+                                    <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 12px;">{task['title']}</div>
                                     """)
                                     if task.get('description'):
-                                        gr.HTML(f"<div style='font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 14px;'>{task['description']}</div>")
-                                    del_btn = gr.Button("🗑️ Delete", variant="stop", size="sm")
+                                        gr.HTML(f"<div style='font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 12px;'>{task['description']}</div>")
+                                    del_btn = gr.Button("Delete", variant="stop", size="sm")
                                     del_btn.click(
                                         fn=lambda tid=task['id']: delete_task(tid, "active"),
                                         outputs=[active_state]
