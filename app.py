@@ -255,7 +255,7 @@ with gr.Blocks() as demo:
                                     with gr.Row(elem_classes="no-wrap-row"):
                                         content_btn = gr.Button("", variant="secondary", size="sm", scale=1)
                                         del_btn = gr.Button("Delete", variant="stop", size="sm", scale=1)
-                                        start_btn = gr.Button("Start →", variant="primary", size="sm", scale=1)
+                                        start_btn = gr.Button("Start →", variant="primary", size="sm", scale=1, elem_classes="start-btn")
 
                                         del_btn.click(
                                             fn=lambda tid=task['id']: delete_task(tid, "active"),
