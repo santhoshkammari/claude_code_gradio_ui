@@ -239,19 +239,21 @@ with gr.Blocks() as demo:
 
                         if backlog:
                             for task in backlog:
-                                with gr.Group():
+                                with gr.Group(elem_classes="task-card"):
                                     gr.HTML(f"""
-                                    <div style="margin-bottom: 8px;">
-                                        <span style="font-size: 13px; color: #6b7280;">📋 {task['id']}</span>
-                                        <span style="font-size: 12px; color: #9ca3af; margin-left: 8px;">{task['time']}</span>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 13px; color: #6b7280; font-weight: 500;">📋 {task['id']}</span>
+                                            <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 500;">{task['time']}</span>
+                                        </div>
                                     </div>
-                                    <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 12px;">{task['title']}</div>
+                                    <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 8px; line-height: 1.4;">{task['title']}</div>
                                     """)
                                     if task.get('description'):
-                                        gr.HTML(f"<div style='font-size: 13px; color: #6b7280; margin-bottom: 12px;'>{task['description']}</div>")
+                                        gr.HTML(f"<div style='font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 14px;'>{task['description']}</div>")
                                     with gr.Row():
-                                        del_btn = gr.Button("Delete", variant="stop", size="sm", scale=1)
-                                        start_btn = gr.Button("Start →", variant="primary", size="sm", scale=1)
+                                        del_btn = gr.Button("🗑️ Delete", variant="stop", size="sm", scale=1)
+                                        start_btn = gr.Button("▶️ Start", variant="primary", size="sm", scale=1)
 
                                         del_btn.click(
                                             fn=lambda tid=task['id']: delete_task(tid, "active"),
@@ -275,17 +277,19 @@ with gr.Blocks() as demo:
 
                         if needs_review:
                             for task in needs_review:
-                                with gr.Group():
+                                with gr.Group(elem_classes="task-card"):
                                     gr.HTML(f"""
-                                    <div style="margin-bottom: 8px;">
-                                        <span style="font-size: 13px; color: #6b7280;">📋 {task['id']}</span>
-                                        <span style="font-size: 12px; color: #9ca3af; margin-left: 8px;">{task['time']}</span>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 13px; color: #6b7280; font-weight: 500;">📋 {task['id']}</span>
+                                            <span style="background: #d1fae5; color: #059669; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 500;">In Review</span>
+                                        </div>
                                     </div>
-                                    <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 12px;">{task['title']}</div>
+                                    <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 8px; line-height: 1.4;">{task['title']}</div>
                                     """)
                                     if task.get('description'):
-                                        gr.HTML(f"<div style='font-size: 13px; color: #6b7280; margin-bottom: 12px;'>{task['description']}</div>")
-                                    del_btn = gr.Button("Delete", variant="stop", size="sm")
+                                        gr.HTML(f"<div style='font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 14px;'>{task['description']}</div>")
+                                    del_btn = gr.Button("🗑️ Delete", variant="stop", size="sm")
                                     del_btn.click(
                                         fn=lambda tid=task['id']: delete_task(tid, "active"),
                                         outputs=[active_state]
@@ -384,12 +388,142 @@ with gr.Blocks() as demo:
                 outputs=[jams_backlog, jams_review, jams_input]
             )
 
+        with gr.Tab("AutoPlan"):
+            gr.Markdown("AutoPlan content coming soon...")
+
 if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=7860,
         css="""
             footer {display: none !important;}
-            .gradio-container {margin-bottom: 0 !important;}
+            .gradio-container {
+                margin-bottom: 0 !important;
+                background: #f8fafc !important;
+            }
+
+            /* Column styling */
+            .column {
+                background: #ffffff;
+                border-radius: 16px;
+                padding: 20px;
+            }
+
+            /* Task card styling */
+            .task-card {
+                background: #ffffff !important;
+                border: 1px solid #e5e7eb !important;
+                border-radius: 12px !important;
+                padding: 16px !important;
+                margin-bottom: 12px !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02) !important;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+
+            .task-card:hover {
+                box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04) !important;
+                border-color: #cbd5e1 !important;
+                transform: translateY(-1px);
+            }
+
+            /* Section headers */
+            .section-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 16px;
+                padding-bottom: 12px;
+                border-bottom: 1px solid #f3f4f6;
+            }
+
+            /* Button styling */
+            button[variant="stop"] {
+                background: #fee2e2 !important;
+                color: #dc2626 !important;
+                border: 1px solid #fecaca !important;
+                border-radius: 8px !important;
+                font-weight: 500 !important;
+                font-size: 13px !important;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+
+            button[variant="stop"]:hover {
+                background: #fecaca !important;
+                border-color: #fca5a5 !important;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15) !important;
+            }
+
+            button[variant="primary"] {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+                color: white !important;
+                border: none !important;
+                border-radius: 8px !important;
+                font-weight: 500 !important;
+                font-size: 13px !important;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+
+            button[variant="primary"]:hover {
+                background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35) !important;
+            }
+
+            button {
+                border-radius: 8px !important;
+                font-weight: 500 !important;
+            }
+
+            /* Input styling */
+            .input-container input, .input-container textarea {
+                border: 1px solid #e5e7eb !important;
+                border-radius: 8px !important;
+                padding: 10px 14px !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .input-container input:focus, .input-container textarea:focus {
+                border-color: #3b82f6 !important;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+            }
+
+            /* Tab styling */
+            .tab-nav button {
+                border-radius: 8px 8px 0 0 !important;
+                font-weight: 500 !important;
+                color: #6b7280 !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .tab-nav button:hover {
+                background: #f9fafb !important;
+                color: #374151 !important;
+            }
+
+            .tab-nav button[aria-selected="true"] {
+                background: white !important;
+                border-bottom: 3px solid #3b82f6 !important;
+                color: #3b82f6 !important;
+            }
+
+            /* Empty state styling */
+            .empty-state {
+                text-align: center;
+                padding: 60px 20px;
+                color: #9ca3af;
+                font-size: 14px;
+            }
+
+            /* Add Task button special styling */
+            button:contains("+ Task") {
+                background: #f97316 !important;
+                box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25) !important;
+            }
+
+            button:contains("+ Task"):hover {
+                background: #ea580c !important;
+                box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35) !important;
+            }
         """
     )
