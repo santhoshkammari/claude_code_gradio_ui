@@ -174,7 +174,16 @@ with gr.Blocks() as demo:
 
     with gr.Tabs():
         with gr.Tab("Active"):
-            gr.Markdown("### Coming soon...")
+            with gr.Blocks():
+                with gr.Row(height="600px"):
+                    with gr.Column():
+                        gr.Markdown('hai')
+                    with gr.Column():
+                        gr.Markdown('hai')
+            with gr.Row():
+                gr.Markdown()
+                chat_input = gr.Textbox(placeholder="Hi...",show_label=False)
+                gr.Markdown()
 
         with gr.Tab("Done"):
             with gr.Row():
