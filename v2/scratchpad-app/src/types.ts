@@ -13,8 +13,16 @@ export interface Task {
   status: 'pending' | 'in_progress' | 'completed' | 'failed'
   priority?: 'low' | 'medium' | 'high'
   model?: string
+  folder_path?: string
   created_at: number
   updated_at: number
+}
+
+export interface FileChange {
+  path: string
+  type: 'added' | 'modified' | 'deleted'
+  additions?: number
+  deletions?: number
 }
 
 export interface Message {
