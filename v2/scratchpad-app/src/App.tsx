@@ -51,15 +51,19 @@ function App() {
   }, [selectedTask])
 
   useEffect(() => {
-    if (activityLog.length > prevActivityLengthRef.current && activityLog.length > 0) {
-      activityEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    if (activityLog.length > prevActivityLengthRef.current && activityLog.length > 0 && showChat) {
+      activityEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
     prevActivityLengthRef.current = activityLog.length
-  }, [activityLog])
+  }, [activityLog, showChat])
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [chatMessages])
+    if (chatMessages.length > 0 && showChat) {
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }, 100)
+    }
+  }, [chatMessages, showChat])
 
   const fetchSessions = async () => {
     const res = await fetch(`${API_URL}/sessions`)
@@ -223,6 +227,18 @@ function App() {
     }
   }
 
+  const startTaskFromCard = async (taskId: string, model: string) => {
+    try {
+      await fetch(`${API_URL}/tasks/${taskId}/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model })
+      })
+    } catch (err) {
+      console.error('Failed to start task:', err)
+    }
+  }
+
   const sendMessage = async () => {
     if (!chatInput.trim() || !selectedTask) return
 
@@ -333,7 +349,22 @@ function App() {
                   {task.model && <div className="task-model-badge">Agent: {task.model}</div>}
                   <div className="task-footer">
                     <div className="task-date">{new Date(task.created_at).toLocaleDateString()}</div>
-                    <button className="task-action-btn" onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }}>🗑️</button>
+                    <div className="task-footer-actions">
+                      {task.status === 'pending' && (
+                        <div className="start-btn-group">
+                          <button className="start-btn" onClick={(e) => { e.stopPropagation(); startTaskFromCard(task.id, 'sonnet'); }}>
+                            ▶ Start
+                          </button>
+                          <select className="model-select" onClick={(e) => e.stopPropagation()} onChange={(e) => { e.stopPropagation(); startTaskFromCard(task.id, e.target.value); }}>
+                            <option value="">▼</option>
+                            <option value="sonnet">Sonnet</option>
+                            <option value="haiku">Haiku</option>
+                            <option value="qwen">Qwen</option>
+                          </select>
+                        </div>
+                      )}
+                      <button className="task-action-btn" onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }}>🗑️</button>
+                    </div>
                   </div>
                 </div>
               ))}
