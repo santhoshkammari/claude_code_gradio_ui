@@ -15,6 +15,8 @@ function App() {
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskDescription, setNewTaskDescription] = useState('')
   const activityEndRef = useRef<HTMLDivElement>(null)
+  const eventSourceRef = useRef<EventSource | null>(null)
+  const prevActivityLengthRef = useRef(0)
 
   useEffect(() => {
     fetchSessions()
@@ -30,10 +32,19 @@ function App() {
     if (selectedTask) {
       connectToTaskStream(selectedTask.id)
     }
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+    }
   }, [selectedTask])
 
   useEffect(() => {
-    activityEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (activityLog.length > prevActivityLengthRef.current && activityLog.length > 0) {
+      activityEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }
+    prevActivityLengthRef.current = activityLog.length
   }, [activityLog])
 
   const fetchSessions = async () => {
@@ -52,8 +63,15 @@ function App() {
   }
 
   const connectToTaskStream = (taskId: string) => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+    }
+
     setActivityLog([])
+    prevActivityLengthRef.current = 0
+
     const eventSource = new EventSource(`${API_URL}/tasks/${taskId}/stream`)
+    eventSourceRef.current = eventSource
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data)
@@ -65,15 +83,15 @@ function App() {
         ))
         if (data.status === 'completed' || data.status === 'failed') {
           eventSource.close()
+          eventSourceRef.current = null
         }
       }
     }
 
     eventSource.onerror = () => {
       eventSource.close()
+      eventSourceRef.current = null
     }
-
-    return () => eventSource.close()
   }
 
   const createSession = async () => {
@@ -99,7 +117,21 @@ function App() {
   }
 
   const handleCreateTask = async () => {
-    if (!currentSession || !newTaskTitle.trim() || !newTaskDescription.trim()) return
+    if (!newTaskTitle.trim() || !newTaskDescription.trim()) return
+
+    let session = currentSession
+    if (!session) {
+      const id = Date.now().toString()
+      const title = 'Default Session'
+      const res = await fetch(`${API_URL}/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, title })
+      })
+      session = await res.json()
+      setSessions([session])
+      setCurrentSession(session)
+    }
 
     const id = Date.now().toString()
     const res = await fetch(`${API_URL}/tasks`, {
@@ -107,7 +139,7 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id,
-        session_id: currentSession.id,
+        session_id: session.id,
         title: newTaskTitle,
         content: newTaskDescription,
         status: 'pending',
@@ -120,8 +152,11 @@ function App() {
     setNewTaskTitle('')
     setNewTaskDescription('')
 
-    await fetch(`${API_URL}/tasks/${id}/execute`, { method: 'POST' })
-    fetchTasks(currentSession.id)
+    try {
+      await fetch(`${API_URL}/tasks/${id}/execute`, { method: 'POST' })
+    } catch (err) {
+      console.error('Failed to start task execution:', err)
+    }
   }
 
   const deleteTask = async (id: string) => {

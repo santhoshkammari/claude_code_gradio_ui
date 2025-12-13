@@ -47,6 +47,8 @@ body {
   flex-direction: column;
   gap: 20px;
   z-index: 10;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar-header {
@@ -210,6 +212,7 @@ body {
   gap: 20px;
   overflow: hidden;
   z-index: 10;
+  height: 100vh;
 }
 
 .main-header {
@@ -404,6 +407,8 @@ body {
   flex-direction: column;
   gap: 20px;
   z-index: 10;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .chat-header {
