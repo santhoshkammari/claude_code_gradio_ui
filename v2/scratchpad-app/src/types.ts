@@ -18,7 +18,7 @@ export interface Task {
 
 export interface Message {
   id: string
-  session_id: string
+  task_id: string
   role: 'user' | 'assistant'
   content: string
   created_at: number

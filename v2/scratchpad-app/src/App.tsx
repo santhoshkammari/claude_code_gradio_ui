@@ -2,53 +2,189 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import type { Session, Task, Message } from './types'
 
+const API_URL = 'http://localhost:3001/api'
+
 function App() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [taskFilter, setTaskFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all')
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
 
   useEffect(() => {
-    const mockSession: Session = {
-      id: '1',
-      title: 'AI Research Project',
-      created_at: Date.now(),
-      updated_at: Date.now()
-    }
-    setSessions([mockSession])
-    setCurrentSession(mockSession)
-
-    const mockTasks: Task[] = [
-      { id: '1', session_id: '1', title: 'Find top 5 RAG papers', content: 'Research and summarize latest RAG techniques', status: 'completed', priority: 'high', created_at: Date.now() - 86400000, updated_at: Date.now() },
-      { id: '2', session_id: '1', title: 'Implement vector database', content: 'Set up ChromaDB for embeddings', status: 'in_progress', priority: 'high', created_at: Date.now() - 43200000, updated_at: Date.now() },
-      { id: '3', session_id: '1', title: 'Design UI mockups', content: 'Create glassmorphic design system', status: 'pending', priority: 'medium', created_at: Date.now(), updated_at: Date.now() }
-    ]
-    setTasks(mockTasks)
-
-    const mockMessages: Message[] = [
-      { id: '1', session_id: '1', role: 'user', content: 'Help me find the best RAG papers', created_at: Date.now() - 86400000 },
-      { id: '2', session_id: '1', role: 'assistant', content: 'I found 5 excellent RAG papers. Here are the top ones:\n1. Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks\n2. Self-RAG: Learning to Retrieve, Generate, and Critique\n3. REPLUG: Retrieval-Augmented Black-Box Language Models', created_at: Date.now() - 86300000 }
-    ]
-    setMessages(mockMessages)
+    fetchSessions()
   }, [])
 
-  const filteredTasks = tasks.filter(task => taskFilter === 'all' || task.status === taskFilter)
+  useEffect(() => {
+    if (currentSession) {
+      fetchTasks(currentSession.id)
+    }
+  }, [currentSession])
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim() || !currentSession) return
+  useEffect(() => {
+    if (selectedTask) {
+      fetchMessages(selectedTask.id)
+    }
+  }, [selectedTask])
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      session_id: currentSession.id,
+  const fetchSessions = async () => {
+    const res = await fetch(`${API_URL}/sessions`)
+    const data = await res.json()
+    setSessions(data)
+    if (data.length > 0 && !currentSession) {
+      setCurrentSession(data[0])
+    }
+  }
+
+  const fetchTasks = async (sessionId: string) => {
+    const res = await fetch(`${API_URL}/sessions/${sessionId}/tasks`)
+    const data = await res.json()
+    setTasks(data)
+  }
+
+  const fetchMessages = async (taskId: string) => {
+    const res = await fetch(`${API_URL}/tasks/${taskId}/messages`)
+    const data = await res.json()
+    setMessages(data)
+  }
+
+  const createSession = async () => {
+    const id = Date.now().toString()
+    const title = `Session ${sessions.length + 1}`
+    const res = await fetch(`${API_URL}/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, title })
+    })
+    const newSession = await res.json()
+    setSessions([newSession, ...sessions])
+    setCurrentSession(newSession)
+  }
+
+  const deleteSession = async (id: string) => {
+    await fetch(`${API_URL}/sessions/${id}`, { method: 'DELETE' })
+    const updated = sessions.filter(s => s.id !== id)
+    setSessions(updated)
+    if (currentSession?.id === id) {
+      setCurrentSession(updated[0] || null)
+    }
+  }
+
+  const createTask = async () => {
+    if (!currentSession) return
+
+    const id = Date.now().toString()
+    const title = `Task ${tasks.length + 1}`
+    const res = await fetch(`${API_URL}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        session_id: currentSession.id,
+        title,
+        content: '',
+        status: 'pending',
+        priority: 'medium'
+      })
+    })
+    const newTask = await res.json()
+    setTasks([newTask, ...tasks])
+  }
+
+  const deleteTask = async (id: string) => {
+    await fetch(`${API_URL}/tasks/${id}`, { method: 'DELETE' })
+    const updated = tasks.filter(t => t.id !== id)
+    setTasks(updated)
+    if (selectedTask?.id === id) {
+      setSelectedTask(null)
+      setMessages([])
+    }
+  }
+
+  const updateTaskStatus = async (id: string, status: Task['status']) => {
+    const task = tasks.find(t => t.id === id)
+    if (!task) return
+
+    await fetch(`${API_URL}/tasks/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...task,
+        status,
+        updated_at: Date.now()
+      })
+    })
+
+    setTasks(tasks.map(t => t.id === id ? { ...t, status } : t))
+    if (selectedTask?.id === id) {
+      setSelectedTask({ ...selectedTask, status })
+    }
+  }
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !selectedTask) return
+
+    setIsLoadingAI(true)
+    setInputMessage('')
+
+    const userMsg: Message = {
+      id: `${Date.now()}-user`,
+      task_id: selectedTask.id,
       role: 'user',
       content: inputMessage,
       created_at: Date.now()
     }
-    setMessages([...messages, newMessage])
-    setInputMessage('')
+    setMessages([...messages, userMsg])
+
+    try {
+      const response = await fetch(`${API_URL}/tasks/${selectedTask.id}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: inputMessage })
+      })
+
+      const reader = response.body?.getReader()
+      if (!reader) return
+
+      let aiResponse = ''
+      const decoder = new TextDecoder()
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6))
+            if (data.type === 'chunk') {
+              aiResponse += data.content
+            } else if (data.type === 'done') {
+              const assistantMsg: Message = {
+                id: `${Date.now()}-assistant`,
+                task_id: selectedTask.id,
+                role: 'assistant',
+                content: data.content,
+                created_at: Date.now()
+              }
+              setMessages(prev => [...prev, assistantMsg])
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('AI error:', error)
+    } finally {
+      setIsLoadingAI(false)
+    }
   }
+
+  const filteredTasks = tasks.filter(task => taskFilter === 'all' || task.status === taskFilter)
 
   return (
     <div className="app">
@@ -67,17 +203,19 @@ function App() {
               <div
                 key={session.id}
                 className={`session-item ${currentSession?.id === session.id ? 'active' : ''}`}
-                onClick={() => setCurrentSession(session)}
               >
-                <div className="session-icon">💬</div>
-                <div className="session-info">
-                  <div className="session-title">{session.title}</div>
-                  <div className="session-date">{new Date(session.updated_at).toLocaleDateString()}</div>
+                <div onClick={() => setCurrentSession(session)}>
+                  <div className="session-icon">💬</div>
+                  <div className="session-info">
+                    <div className="session-title">{session.title}</div>
+                    <div className="session-date">{new Date(session.updated_at).toLocaleDateString()}</div>
+                  </div>
                 </div>
+                <button className="delete-btn-small" onClick={() => deleteSession(session.id)}>×</button>
               </div>
             ))}
           </div>
-          <button className="new-session-btn glass-btn">+ New Session</button>
+          <button className="new-session-btn glass-btn" onClick={createSession}>+ New Session</button>
         </div>
 
         <div className="profile-section">
@@ -100,26 +238,36 @@ function App() {
             <button className={`filter-btn ${taskFilter === 'in_progress' ? 'active' : ''}`} onClick={() => setTaskFilter('in_progress')}>In Progress</button>
             <button className={`filter-btn ${taskFilter === 'completed' ? 'active' : ''}`} onClick={() => setTaskFilter('completed')}>Completed</button>
           </div>
-          <button className="new-task-btn">+ New Task</button>
+          <button className="new-task-btn" onClick={createTask}>+ New Task</button>
         </header>
 
         <div className="tasks-grid">
           {filteredTasks.map(task => (
-            <div key={task.id} className="task-card glass">
+            <div
+              key={task.id}
+              className={`task-card glass ${selectedTask?.id === task.id ? 'selected' : ''}`}
+              onClick={() => setSelectedTask(task)}
+            >
               <div className="task-header">
                 <div className="task-priority" data-priority={task.priority}></div>
                 <div className="task-title">{task.title}</div>
-                <div className={`task-status status-${task.status}`}>
-                  {task.status.replace('_', ' ')}
-                </div>
+                <select
+                  className={`task-status-select status-${task.status}`}
+                  value={task.status}
+                  onChange={(e) => {
+                    e.stopPropagation()
+                    updateTaskStatus(task.id, e.target.value as Task['status'])
+                  }}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
               </div>
               {task.content && <div className="task-content">{task.content}</div>}
               <div className="task-footer">
                 <div className="task-date">{new Date(task.created_at).toLocaleDateString()}</div>
-                <div className="task-actions">
-                  <button className="task-action-btn">✏️</button>
-                  <button className="task-action-btn">🗑️</button>
-                </div>
+                <button className="task-action-btn" onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }}>🗑️</button>
               </div>
             </div>
           ))}
@@ -128,41 +276,64 @@ function App() {
 
       <aside className="right-sidebar glass">
         <div className="chat-header">
-          <div className="chat-title">AI Assistant</div>
+          <div className="chat-title">{selectedTask ? selectedTask.title : 'Select a task'}</div>
           <div className="chat-model">Sonnet 4.5</div>
         </div>
 
         <div className="messages-container">
-          {messages.map(message => (
-            <div key={message.id} className={`message ${message.role}`}>
-              <div className="message-avatar">
-                {message.role === 'user' ? '👤' : '🤖'}
-              </div>
-              <div className="message-content glass">
-                <div className="message-text">{message.content}</div>
-                <div className="message-time">
-                  {new Date(message.created_at).toLocaleTimeString()}
+          {selectedTask ? (
+            messages.map(message => (
+              <div key={message.id} className={`message ${message.role}`}>
+                <div className="message-avatar">
+                  {message.role === 'user' ? '👤' : '🤖'}
+                </div>
+                <div className="message-content glass">
+                  <div className="message-text">{message.content}</div>
+                  <div className="message-time">
+                    {new Date(message.created_at).toLocaleTimeString()}
+                  </div>
                 </div>
               </div>
+            ))
+          ) : (
+            <div className="empty-state">
+              <div className="empty-icon">📋</div>
+              <div className="empty-text">Select a task to start chatting with AI</div>
             </div>
-          ))}
+          )}
+          {isLoadingAI && (
+            <div className="loading-indicator">
+              <div className="loading-dots">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="chat-input-container">
-          <div className="chat-input glass">
-            <input
-              type="text"
-              placeholder="Ask AI anything..."
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            />
-            <div className="input-actions">
-              <button className="input-btn">📎</button>
-              <button className="input-btn send" onClick={handleSendMessage}>➤</button>
+        {selectedTask && (
+          <div className="chat-input-container">
+            <div className="chat-input glass">
+              <input
+                type="text"
+                placeholder="Ask AI about this task..."
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !isLoadingAI && handleSendMessage()}
+                disabled={isLoadingAI}
+              />
+              <div className="input-actions">
+                <button className="input-btn">📎</button>
+                <button
+                  className="input-btn send"
+                  onClick={handleSendMessage}
+                  disabled={isLoadingAI}
+                >
+                  ➤
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </aside>
     </div>
   )
