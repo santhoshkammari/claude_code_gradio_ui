@@ -308,105 +308,116 @@ with gr.Blocks() as demo:
                         else:
                             gr.HTML("<div style='text-align: center; padding: 40px; color: #9ca3af;'>No tasks in review</div>")
 
-            with gr.Row():
-                active_input = gr.Textbox(
-                    placeholder="Add a task...",
-                    show_label=False,
-                    container=False
-                )
-                active_btn = gr.Button("+ Task", variant="primary")
-
-            def add_and_refresh(title):
-                add_task(title, "backlog", "active")
-                return {"refresh": datetime.now().isoformat()}, ""
-
-            active_btn.click(
-                fn=add_and_refresh,
-                inputs=[active_input],
-                outputs=[active_state, active_input]
-            )
-            active_input.submit(
-                fn=add_and_refresh,
-                inputs=[active_input],
-                outputs=[active_state, active_input]
-            )
 
         with gr.Tab("Done"):
-            with gr.Row():
-                with gr.Column(scale=1):
-                    done_backlog = gr.HTML(render_backlog("done"))
-                with gr.Column(scale=1):
-                    done_review = gr.HTML(render_needs_review("done"))
+            done_state = gr.State({"refresh": datetime.now().isoformat()})
 
-            with gr.Row():
-                done_input = gr.Textbox(
-                    placeholder="Add a completed task...",
-                    show_label=False,
-                    scale=3,
-                    container=False
-                )
-                done_section = gr.Dropdown(
-                    choices=["backlog", "needs_review"],
-                    value="backlog",
-                    show_label=False,
-                    scale=1,
-                    container=False
-                )
-                done_btn = gr.Button("+ Task", variant="primary", scale=1)
+            @gr.render(inputs=done_state)
+            def render_done(state):
+                tasks = load_tasks()
+                backlog = [t for t in tasks.get("done", []) if t.get("section") == "backlog"]
+                needs_review = [t for t in tasks.get("done", []) if t.get("section") == "needs_review"]
 
-            done_btn.click(
-                fn=lambda x, s: add_task(x, s, "done"),
-                inputs=[done_input, done_section],
-                outputs=[done_backlog, done_review, done_input]
-            )
-            done_input.submit(
-                fn=lambda x, s: add_task(x, s, "done"),
-                inputs=[done_input, done_section],
-                outputs=[done_backlog, done_review, done_input]
-            )
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        gr.HTML(render_backlog("done"))
+                    with gr.Column(scale=1):
+                        gr.HTML(render_needs_review("done"))
 
         with gr.Tab("Jams"):
-            with gr.Row():
-                with gr.Column(scale=1):
-                    jams_backlog = gr.HTML(render_backlog("jams"))
-                with gr.Column(scale=1):
-                    jams_review = gr.HTML(render_needs_review("jams"))
+            jams_state = gr.State({"refresh": datetime.now().isoformat()})
 
-            with gr.Row():
-                jams_input = gr.Textbox(
-                    placeholder="Add a jam...",
-                    show_label=False,
-                    scale=3,
-                    container=False
-                )
-                jams_section = gr.Dropdown(
-                    choices=["backlog", "needs_review"],
-                    value="backlog",
-                    show_label=False,
-                    scale=1,
-                    container=False
-                )
-                jams_btn = gr.Button("+ Task", variant="primary", scale=1)
+            @gr.render(inputs=jams_state)
+            def render_jams(state):
+                tasks = load_tasks()
+                backlog = [t for t in tasks.get("jams", []) if t.get("section") == "backlog"]
+                needs_review = [t for t in tasks.get("jams", []) if t.get("section") == "needs_review"]
 
-            jams_btn.click(
-                fn=lambda x, s: add_task(x, s, "jams"),
-                inputs=[jams_input, jams_section],
-                outputs=[jams_backlog, jams_review, jams_input]
-            )
-            jams_input.submit(
-                fn=lambda x, s: add_task(x, s, "jams"),
-                inputs=[jams_input, jams_section],
-                outputs=[jams_backlog, jams_review, jams_input]
-            )
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        gr.HTML(render_backlog("jams"))
+                    with gr.Column(scale=1):
+                        gr.HTML(render_needs_review("jams"))
 
         with gr.Tab("AutoPlan"):
             gr.Markdown("AutoPlan content coming soon...")
+
+    current_tab = gr.State("Active")
+
+    with gr.Row(elem_classes="input-row"):
+        with gr.Column(scale=1, elem_classes="input-wrapper"):
+            task_input = gr.Textbox(
+                placeholder="Add a task...",
+                show_label=False,
+                container=False,
+                elem_classes="chat-input",
+                lines=1,
+                max_lines=5,
+                autofocus=True
+            )
+
+    def add_task_from_input(title):
+        add_task(title, "backlog", "active")
+        return {"refresh": datetime.now().isoformat()}, ""
+
+    task_input.submit(
+        fn=add_task_from_input,
+        inputs=[task_input],
+        outputs=[active_state, task_input]
+    )
 
 if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=7860,
         css="""
+            /* ChatGPT-style input */
+            .input-row {
+                position: sticky;
+                bottom: 0;
+                background: white;
+                padding: 20px 0;
+                border-top: 1px solid #e5e7eb;
+                z-index: 100;
+            }
+
+            .input-wrapper {
+                position: relative;
+                max-width: 800px;
+                margin: 0 auto;
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+            }
+
+            .chat-input {
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+
+            .chat-input textarea {
+                border-radius: 24px !important;
+                border: 1px solid #d1d5db !important;
+                padding: 12px 16px !important;
+                font-size: 16px !important;
+                resize: none !important;
+                box-shadow: 0 0 10px rgba(0,0,0,0.05) !important;
+                overflow-y: hidden !important;
+                scrollbar-width: none !important;
+            }
+
+            .chat-input textarea::-webkit-scrollbar {
+                display: none !important;
+            }
+
+            .chat-input textarea:focus {
+                border-color: #10a37f !important;
+                box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.1) !important;
+                outline: none !important;
+            }
+
             footer {display: none !important;}
             .gradio-container {
                 margin-bottom: 0 !important;

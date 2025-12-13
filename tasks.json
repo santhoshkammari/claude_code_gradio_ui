@@ -1,42 +1,5 @@
 {
-  "active": [
-    {
-      "id": "TASK-001",
-      "title": "sdfsdfsf",
-      "section": "backlog",
-      "description": "",
-      "status": "open",
-      "time": "03:23 PM",
-      "created": "2025-12-13T15:23:05.652490"
-    },
-    {
-      "id": "TASK-002",
-      "title": "sdfsdf",
-      "section": "backlog",
-      "description": "",
-      "status": "open",
-      "time": "03:23 PM",
-      "created": "2025-12-13T15:23:07.673461"
-    },
-    {
-      "id": "TASK-003",
-      "title": "sdfdsf",
-      "section": "backlog",
-      "description": "",
-      "status": "open",
-      "time": "03:23 PM",
-      "created": "2025-12-13T15:23:09.788520"
-    },
-    {
-      "id": "TASK-004",
-      "title": "sfsfsdfsdf",
-      "section": "backlog",
-      "description": "",
-      "status": "open",
-      "time": "03:23 PM",
-      "created": "2025-12-13T15:23:12.408026"
-    }
-  ],
+  "active": [],
   "done": [],
   "jams": []
 }
