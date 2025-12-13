@@ -12,7 +12,7 @@ body {
 .app {
   display: flex;
   height: 100vh;
-  background: linear-gradient(135deg, #008FE5 0%, #65B6FA 50%, #FFFFFF 100%);
+  background: #FAFAFA;
   position: relative;
   overflow: hidden;
 }
@@ -22,7 +22,7 @@ body {
   position: absolute;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(0,143,229,0.05) 1px, transparent 1px);
+  background: radial-gradient(circle, rgba(0, 143, 229, 0.03) 1px, transparent 1px);
   background-size: 40px 40px;
   animation: drift 80s linear infinite;
 }
@@ -33,11 +33,11 @@ body {
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 143, 229, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 143, 229, 0.08);
 }
 
 .left-sidebar {
@@ -62,20 +62,20 @@ body {
   gap: 12px;
   font-size: 18px;
   font-weight: 700;
-  color: white;
+  color: #1a1a1a;
 }
 
 .logo-icon {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, #008FE5, #65B6FA);
+  background: linear-gradient(135deg, #008FE5, #0EA5E9);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 20px;
-  box-shadow: 0 4px 12px rgba(0, 143, 229, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 143, 229, 0.25);
 }
 
 .sessions-section {
@@ -89,7 +89,7 @@ body {
 .section-title {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 1px;
   padding: 0 12px;
@@ -111,18 +111,19 @@ body {
   align-items: center;
   cursor: pointer;
   transition: all 0.2s;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 143, 229, 0.1);
 }
 
 .session-item:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.8);
   transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 143, 229, 0.1);
 }
 
 .session-item.active {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 143, 229, 0.08);
+  border-color: rgba(0, 143, 229, 0.3);
 }
 
 .session-icon {
@@ -137,7 +138,7 @@ body {
 .session-title {
   font-size: 14px;
   font-weight: 600;
-  color: white;
+  color: #1a1a1a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -145,22 +146,23 @@ body {
 
 .session-date {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #64748b;
 }
 
 .new-session-btn {
   padding: 12px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
+  border: 1px solid rgba(0, 143, 229, 0.2);
+  background: rgba(255, 255, 255, 0.6);
+  color: #008FE5;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .new-session-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 143, 229, 0.1);
+  border-color: rgba(0, 143, 229, 0.3);
   transform: translateY(-2px);
 }
 
@@ -180,7 +182,7 @@ body {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #65B6FA, #008FE5);
+  background: linear-gradient(135deg, #008FE5, #0EA5E9);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -196,12 +198,12 @@ body {
 .profile-name {
   font-size: 14px;
   font-weight: 600;
-  color: white;
+  color: #1a1a1a;
 }
 
 .profile-status {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #64748b;
 }
 
 .main-content {
@@ -227,7 +229,7 @@ body {
 .header-title {
   font-size: 24px;
   font-weight: 700;
-  color: white;
+  color: #1a1a1a;
 }
 
 .task-filters {
@@ -239,9 +241,9 @@ body {
 .filter-btn {
   padding: 8px 16px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 143, 229, 0.15);
+  background: rgba(255, 255, 255, 0.6);
+  color: #64748b;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -249,30 +251,31 @@ body {
 }
 
 .filter-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 143, 229, 0.25);
 }
 
 .filter-btn.active {
-  background: rgba(255, 255, 255, 0.3);
-  color: white;
-  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 143, 229, 0.1);
+  color: #008FE5;
+  border-color: rgba(0, 143, 229, 0.3);
 }
 
 .new-task-btn {
   padding: 10px 20px;
   border-radius: 10px;
   border: none;
-  background: linear-gradient(135deg, #008FE5, #65B6FA);
+  background: linear-gradient(135deg, #008FE5, #0EA5E9);
   color: white;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 143, 229, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 143, 229, 0.2);
 }
 
 .new-task-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 143, 229, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 143, 229, 0.3);
 }
 
 .tasks-grid {
@@ -329,7 +332,7 @@ body {
   flex: 1;
   font-size: 16px;
   font-weight: 600;
-  color: white;
+  color: #1a1a1a;
   line-height: 1.4;
 }
 
@@ -343,23 +346,23 @@ body {
 }
 
 .status-pending {
-  background: rgba(255, 165, 2, 0.2);
-  color: #ffa502;
+  background: rgba(251, 191, 36, 0.15);
+  color: #f59e0b;
 }
 
 .status-in_progress {
-  background: rgba(0, 143, 229, 0.2);
-  color: #65B6FA;
+  background: rgba(0, 143, 229, 0.15);
+  color: #008FE5;
 }
 
 .status-completed {
-  background: rgba(29, 209, 161, 0.2);
-  color: #1dd1a1;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
 }
 
 .task-content {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+  color: #64748b;
   line-height: 1.6;
 }
 
@@ -368,12 +371,12 @@ body {
   align-items: center;
   justify-content: space-between;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(0, 143, 229, 0.1);
 }
 
 .task-date {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #94a3b8;
 }
 
 .task-footer-actions {
@@ -387,12 +390,13 @@ body {
   gap: 0;
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
 }
 
 .start-btn {
   padding: 6px 12px;
   border: none;
-  background: linear-gradient(135deg, #1dd1a1, #10b981);
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   font-size: 12px;
   font-weight: 600;
@@ -401,13 +405,14 @@ body {
 }
 
 .start-btn:hover {
-  background: linear-gradient(135deg, #10b981, #1dd1a1);
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
 }
 
 .model-select {
   padding: 6px 8px;
   border: none;
-  background: linear-gradient(135deg, #10b981, #1dd1a1);
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   font-size: 12px;
   font-weight: 600;
@@ -416,14 +421,15 @@ body {
 }
 
 .model-select option {
-  background: #1a1a1a;
+  background: #ffffff;
+  color: #1a1a1a;
 }
 
 .task-model-badge {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #008FE5;
   padding: 4px 8px;
-  background: rgba(0, 143, 229, 0.2);
+  background: rgba(0, 143, 229, 0.1);
   border-radius: 6px;
   width: fit-content;
 }
@@ -432,8 +438,9 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -443,8 +450,9 @@ body {
 }
 
 .task-action-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(239, 68, 68, 0.2);
   transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
 }
 
 .right-sidebar {
@@ -467,13 +475,13 @@ body {
 .chat-title {
   font-size: 18px;
   font-weight: 700;
-  color: white;
+  color: #1a1a1a;
   margin-bottom: 4px;
 }
 
 .chat-model {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #64748b;
 }
 
 .messages-container {
@@ -499,7 +507,7 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 143, 229, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -517,7 +525,7 @@ body {
 }
 
 .message.user .message-content {
-  background: linear-gradient(135deg, #008FE5, #65B6FA);
+  background: linear-gradient(135deg, #008FE5, #0EA5E9);
   border: none;
 }
 
@@ -530,7 +538,7 @@ body {
 
 .message-time {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .chat-input-container {
@@ -551,11 +559,11 @@ body {
   background: transparent;
   outline: none;
   font-size: 14px;
-  color: white;
+  color: #1a1a1a;
 }
 
 .chat-input input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: #94a3b8;
 }
 
 .input-actions {
@@ -567,8 +575,8 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 143, 229, 0.15);
+  background: rgba(255, 255, 255, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -578,12 +586,12 @@ body {
 }
 
 .input-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.8);
   transform: scale(1.1);
 }
 
 .input-btn.send {
-  background: linear-gradient(135deg, #008FE5, #65B6FA);
+  background: linear-gradient(135deg, #008FE5, #0EA5E9);
   border: none;
   color: white;
 }
@@ -594,17 +602,17 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 143, 229, 0.05);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 143, 229, 0.2);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 143, 229, 0.3);
 }
 
 .session-item {
@@ -626,8 +634,8 @@ body {
   height: 24px;
   border-radius: 6px;
   border: none;
-  background: rgba(255, 77, 87, 0.2);
-  color: #ff4d57;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
@@ -640,13 +648,14 @@ body {
 }
 
 .delete-btn-small:hover {
-  background: rgba(255, 77, 87, 0.3);
+  background: rgba(239, 68, 68, 0.2);
   transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
 }
 
 .task-card.selected {
-  border: 2px solid rgba(0, 143, 229, 0.6);
-  box-shadow: 0 0 20px rgba(0, 143, 229, 0.3);
+  border: 2px solid rgba(0, 143, 229, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 143, 229, 0.15);
 }
 
 .task-status-select {
@@ -671,12 +680,13 @@ body {
 
 .empty-icon {
   font-size: 64px;
-  opacity: 0.3;
+  opacity: 0.2;
+  color: #64748b;
 }
 
 .empty-text {
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #94a3b8;
   text-align: center;
 }
 
@@ -695,7 +705,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.6);
+  background: #008FE5;
   animation: bounce 1.4s infinite ease-in-out both;
 }
 
@@ -722,12 +732,12 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
 }
 
 .modal {
@@ -740,7 +750,7 @@ body {
 
 .modal-header {
   padding: 24px 32px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(0, 143, 229, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -750,7 +760,7 @@ body {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
-  color: white;
+  color: #1a1a1a;
 }
 
 .modal-close {
@@ -758,15 +768,16 @@ body {
   height: 36px;
   border-radius: 10px;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(0, 143, 229, 0.1);
+  color: #64748b;
   font-size: 24px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .modal-close:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 143, 229, 0.15);
+  color: #1a1a1a;
   transform: rotate(90deg);
 }
 
@@ -786,16 +797,16 @@ body {
 .form-group label {
   font-size: 14px;
   font-weight: 600;
-  color: white;
+  color: #1a1a1a;
 }
 
 .form-input,
 .form-textarea {
   padding: 12px 16px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  border: 1px solid rgba(0, 143, 229, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  color: #1a1a1a;
   font-size: 14px;
   font-family: inherit;
   outline: none;
@@ -804,13 +815,14 @@ body {
 
 .form-input::placeholder,
 .form-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: #94a3b8;
 }
 
 .form-input:focus,
 .form-textarea:focus {
-  border-color: rgba(0, 143, 229, 0.6);
-  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(0, 143, 229, 0.5);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 0 3px rgba(0, 143, 229, 0.1);
 }
 
 .form-textarea {
@@ -820,7 +832,7 @@ body {
 
 .modal-footer {
   padding: 24px 32px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(0, 143, 229, 0.1);
   display: flex;
   gap: 12px;
   justify-content: flex-end;
@@ -838,22 +850,22 @@ body {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(0, 143, 229, 0.1);
+  color: #008FE5;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 143, 229, 0.15);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #008FE5, #65B6FA);
+  background: linear-gradient(135deg, #008FE5, #0EA5E9);
   color: white;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 143, 229, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 143, 229, 0.3);
 }
 
 .activity-container {
@@ -881,7 +893,7 @@ body {
 }
 
 .tool-activity {
-  background: rgba(0, 143, 229, 0.15);
+  background: rgba(0, 143, 229, 0.08);
   border-left: 3px solid #008FE5;
   border-radius: 12px;
   padding: 12px 16px;
@@ -893,7 +905,7 @@ body {
   gap: 8px;
   margin-bottom: 8px;
   font-weight: 600;
-  color: white;
+  color: #1a1a1a;
 }
 
 .tool-icon,
@@ -909,8 +921,8 @@ body {
 .tool-input {
   font-size: 12px;
   font-family: 'Courier New', monospace;
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(0, 0, 0, 0.2);
+  color: #475569;
+  background: rgba(0, 0, 0, 0.05);
   padding: 8px;
   border-radius: 6px;
   white-space: pre-wrap;
@@ -918,8 +930,8 @@ body {
 }
 
 .tool-result {
-  background: rgba(29, 209, 161, 0.15);
-  border-left: 3px solid #1dd1a1;
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid #10b981;
   border-radius: 12px;
   padding: 12px 16px;
 }
@@ -930,40 +942,40 @@ body {
   gap: 8px;
   margin-bottom: 8px;
   font-weight: 600;
-  color: white;
+  color: #1a1a1a;
 }
 
 .result-content {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.9);
+  color: #475569;
   line-height: 1.6;
   white-space: pre-wrap;
 }
 
 .agent-message {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 12px;
   padding: 12px 16px;
 }
 
 .agent-message.assistant {
-  border-left: 3px solid #65B6FA;
+  border-left: 3px solid #008FE5;
 }
 
 .agent-message.user {
-  border-left: 3px solid #ffa502;
+  border-left: 3px solid #f59e0b;
 }
 
 .message-role {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: #64748b;
   margin-bottom: 6px;
 }
 
 .message-text {
   font-size: 14px;
-  color: white;
+  color: #1a1a1a;
   line-height: 1.6;
 }
 
@@ -972,11 +984,11 @@ body {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
-  color: white;
+  color: #1a1a1a;
   justify-content: center;
 }
 
@@ -992,24 +1004,24 @@ body {
 }
 
 .task-status-badge.status-pending {
-  background: rgba(255, 165, 2, 0.2);
-  color: #ffa502;
+  background: rgba(251, 191, 36, 0.15);
+  color: #f59e0b;
 }
 
 .task-status-badge.status-in_progress {
-  background: rgba(0, 143, 229, 0.2);
-  color: #65B6FA;
+  background: rgba(0, 143, 229, 0.15);
+  color: #008FE5;
   animation: pulse 2s infinite;
 }
 
 .task-status-badge.status-completed {
-  background: rgba(29, 209, 161, 0.2);
-  color: #1dd1a1;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
 }
 
 .task-status-badge.status-failed {
-  background: rgba(255, 77, 87, 0.2);
-  color: #ff4d57;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
 @keyframes pulse {
@@ -1026,7 +1038,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 16px;
 }
 
@@ -1053,26 +1065,32 @@ body {
   max-width: 70%;
   padding: 12px 16px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 143, 229, 0.1);
 }
 
 .chat-message.user .message-bubble {
-  background: linear-gradient(135deg, #008FE5, #65B6FA);
+  background: linear-gradient(135deg, #008FE5, #0EA5E9);
+  border: none;
 }
 
 .message-content {
-  color: white;
+  color: #1a1a1a;
   font-size: 14px;
   line-height: 1.5;
   white-space: pre-wrap;
 }
 
+.chat-message.user .message-content {
+  color: white;
+}
+
 .chat-input-container {
   padding: 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(0, 143, 229, 0.1);
   display: flex;
   gap: 12px;
   align-items: center;
@@ -1080,10 +1098,10 @@ body {
 
 .model-selector {
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 143, 229, 0.2);
   border-radius: 10px;
-  color: white;
+  color: #1a1a1a;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -1091,23 +1109,23 @@ body {
 }
 
 .model-selector option {
-  background: #1e293b;
-  color: white;
+  background: white;
+  color: #1a1a1a;
 }
 
 .chat-input {
   flex: 1;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 143, 229, 0.2);
   border-radius: 12px;
-  color: white;
+  color: #1a1a1a;
   font-size: 14px;
   outline: none;
 }
 
 .chat-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: #94a3b8;
 }
 
 .send-btn, .start-task-btn {
@@ -1120,11 +1138,12 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
 }
 
 .send-btn:hover, .start-task-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .back-btn {
@@ -1132,8 +1151,8 @@ body {
   height: 36px;
   border-radius: 8px;
   border: none;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: rgba(0, 143, 229, 0.1);
+  color: #008FE5;
   font-size: 18px;
   cursor: pointer;
   transition: all 0.2s;
@@ -1143,7 +1162,7 @@ body {
 }
 
 .back-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 143, 229, 0.15);
 }
 
 .chat-header-left {
@@ -1161,12 +1180,12 @@ body {
 .chat-header-title {
   font-size: 18px;
   font-weight: 600;
-  color: white;
+  color: #1a1a1a;
 }
 
 .chat-header-status {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #64748b;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1179,7 +1198,7 @@ body {
 }
 
 .status-indicator.status-pending {
-  background: #fbbf24;
+  background: #f59e0b;
 }
 
 .status-indicator.status-in_progress {
@@ -1188,7 +1207,7 @@ body {
 }
 
 .status-indicator.status-completed {
-  background: #3b82f6;
+  background: #008FE5;
 }
 
 .status-indicator.status-failed {
@@ -1197,9 +1216,9 @@ body {
 
 .chat-header-folder {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #64748b;
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 143, 229, 0.1);
   border-radius: 8px;
 }
 
@@ -1211,7 +1230,7 @@ body {
 .files-title {
   font-size: 18px;
   font-weight: 700;
-  color: white;
+  color: #1a1a1a;
 }
 
 .files-container {
@@ -1224,10 +1243,10 @@ body {
 }
 
 .files-section, .diff-section, .activity-section {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 12px;
   padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 143, 229, 0.1);
 }
 
 .section-header {
@@ -1236,7 +1255,7 @@ body {
   gap: 8px;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(0, 143, 229, 0.1);
 }
 
 .section-icon {
@@ -1249,15 +1268,15 @@ body {
   flex: 1;
   font-size: 13px;
   font-weight: 600;
-  color: white;
+  color: #1a1a1a;
   margin: 0;
 }
 
 .section-count {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #64748b;
   padding: 2px 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 143, 229, 0.1);
   border-radius: 8px;
 }
 
@@ -1272,7 +1291,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   font-size: 12px;
 }
@@ -1290,23 +1309,23 @@ body {
 }
 
 .file-type-icon.added {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.15);
   color: #10b981;
 }
 
 .file-type-icon.modified {
-  background: rgba(59, 130, 246, 0.2);
-  color: #3b82f6;
+  background: rgba(0, 143, 229, 0.15);
+  color: #008FE5;
 }
 
 .file-type-icon.deleted {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
 }
 
 .file-path {
   flex: 1;
-  color: rgba(255, 255, 255, 0.8);
+  color: #1a1a1a;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1329,8 +1348,8 @@ body {
 .diff-content {
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(0, 0, 0, 0.2);
+  color: #1a1a1a;
+  background: rgba(0, 0, 0, 0.05);
   padding: 12px;
   border-radius: 8px;
   overflow-x: auto;
@@ -1340,7 +1359,7 @@ body {
 
 .activity-item-compact {
   padding: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   font-size: 12px;
 }
@@ -1349,7 +1368,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: #475569;
 }
 
 .tool-name {
@@ -1362,25 +1381,26 @@ body {
   left: 0;
   right: 0;
   margin-top: 4px;
-  background: rgba(30, 41, 59, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(0, 143, 229, 0.2);
   border-radius: 10px;
   max-height: 200px;
   overflow-y: auto;
   z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 143, 229, 0.15);
 }
 
 .folder-suggestion-item {
   padding: 10px 12px;
-  color: white;
+  color: #1a1a1a;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 13px;
 }
 
 .folder-suggestion-item:hover {
-  background: rgba(0, 143, 229, 0.2);
+  background: rgba(0, 143, 229, 0.1);
 }
 
 .form-group {
@@ -1389,9 +1409,9 @@ body {
 
 .task-folder {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #008FE5;
   padding: 4px 8px;
-  background: rgba(0, 143, 229, 0.15);
+  background: rgba(0, 143, 229, 0.1);
   border-radius: 6px;
   width: fit-content;
 }
