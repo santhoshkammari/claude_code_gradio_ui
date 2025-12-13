@@ -2,6 +2,13 @@ import express from 'express'
 import cors from 'cors'
 import Database from 'better-sqlite3'
 import { query } from '@anthropic-ai/claude-agent-sdk'
+import { spawn } from 'child_process'
+import { promises as fs } from 'fs'
+import path from 'path'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+
+const execAsync = promisify(exec)
 
 const app = express()
 const db = new Database('scratchpad.db')
@@ -24,6 +31,8 @@ db.exec(`
     content TEXT,
     status TEXT NOT NULL,
     priority TEXT,
+    model TEXT,
+    folder_path TEXT,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
@@ -50,8 +59,8 @@ const sessionStmts = {
 const taskStmts = {
   getBySession: db.prepare('SELECT * FROM tasks WHERE session_id = ? ORDER BY created_at DESC'),
   getById: db.prepare('SELECT * FROM tasks WHERE id = ?'),
-  create: db.prepare('INSERT INTO tasks (id, session_id, title, content, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
-  updateStatus: db.prepare('UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?'),
+  create: db.prepare('INSERT INTO tasks (id, session_id, title, content, status, priority, model, folder_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
+  updateStatus: db.prepare('UPDATE tasks SET status = ?, model = ?, updated_at = ? WHERE id = ?'),
   delete: db.prepare('DELETE FROM tasks WHERE id = ?')
 }
 
@@ -104,10 +113,10 @@ app.get('/api/sessions/:id/tasks', (req, res) => {
 })
 
 app.post('/api/tasks', (req, res) => {
-  const { id, session_id, title, content, status, priority } = req.body
+  const { id, session_id, title, content, status, priority, model, folder_path } = req.body
   const now = Date.now()
-  taskStmts.create.run(id, session_id, title, content || null, status, priority || null, now, now)
-  res.json({ id, session_id, title, content, status, priority, created_at: now, updated_at: now })
+  taskStmts.create.run(id, session_id, title, content || null, status, priority || null, model || null, folder_path || null, now, now)
+  res.json({ id, session_id, title, content, status, priority, model, folder_path, created_at: now, updated_at: now })
 })
 
 app.delete('/api/tasks/:id', (req, res) => {
@@ -148,6 +157,7 @@ app.get('/api/tasks/:taskId/stream', (req, res) => {
 
 app.post('/api/tasks/:taskId/execute', async (req, res) => {
   const { taskId } = req.params
+  const { model } = req.body
   const task = taskStmts.getById.get(taskId)
 
   if (!task) {
@@ -161,28 +171,31 @@ app.post('/api/tasks/:taskId/execute', async (req, res) => {
   res.json({ message: 'Task execution started' })
 
   runningTasks.set(taskId, true)
-  taskStmts.updateStatus.run('in_progress', Date.now(), taskId)
+  taskStmts.updateStatus.run('in_progress', model, Date.now(), taskId)
   broadcastToTask(taskId, { type: 'task_status', status: 'in_progress' })
 
-  executeTask(taskId, task.title, task.content).catch(err => {
+  const executor = model === 'qwen' ? executeQwenTask : executeClaudeTask
+  executor(taskId, task.title, task.content, model, task.folder_path).catch(err => {
     console.error('Task execution error:', err)
-    taskStmts.updateStatus.run('failed', Date.now(), taskId)
+    taskStmts.updateStatus.run('failed', model, Date.now(), taskId)
     broadcastToTask(taskId, { type: 'task_status', status: 'failed', error: err.message })
     runningTasks.delete(taskId)
   })
 })
 
-async function executeTask(taskId: string, title: string, description: string) {
+async function executeClaudeTask(taskId: string, title: string, description: string, model: string, folderPath?: string) {
   try {
+    const cwd = folderPath ? path.resolve(folderPath) : process.cwd()
+
     const stream = query({
       prompt: `Task: ${title}\n\nDescription: ${description}\n\nPlease work on this task and provide updates on your progress.`,
       options: {
-        model: 'sonnet',
+        model: model || 'sonnet',
         systemPrompt: { type: 'preset', preset: 'claude_code' },
         tools: { type: 'preset', preset: 'claude_code' },
         permissionMode: 'bypassPermissions',
         allowDangerouslySkipPermissions: true,
-        cwd: process.cwd()
+        cwd
       }
     })
 
@@ -226,7 +239,7 @@ async function executeTask(taskId: string, title: string, description: string) {
             role: 'assistant',
             content: `Task completed successfully!\n\nResult: ${msg.result}`
           })
-          taskStmts.updateStatus.run('completed', Date.now(), taskId)
+          taskStmts.updateStatus.run('completed', model, Date.now(), taskId)
           broadcastToTask(taskId, { type: 'task_status', status: 'completed' })
         } else {
           broadcastToTask(taskId, {
@@ -234,7 +247,7 @@ async function executeTask(taskId: string, title: string, description: string) {
             role: 'assistant',
             content: `Task failed: ${msg.subtype}`
           })
-          taskStmts.updateStatus.run('failed', Date.now(), taskId)
+          taskStmts.updateStatus.run('failed', model, Date.now(), taskId)
           broadcastToTask(taskId, { type: 'task_status', status: 'failed' })
         }
       }
@@ -245,12 +258,137 @@ async function executeTask(taskId: string, title: string, description: string) {
       role: 'system',
       content: `Error: ${error.message}`
     })
-    taskStmts.updateStatus.run('failed', Date.now(), taskId)
+    taskStmts.updateStatus.run('failed', model, Date.now(), taskId)
     broadcastToTask(taskId, { type: 'task_status', status: 'failed', error: error.message })
   } finally {
     runningTasks.delete(taskId)
   }
 }
+
+async function executeQwenTask(taskId: string, title: string, description: string, model: string, folderPath?: string) {
+  return new Promise((resolve, reject) => {
+    const prompt = `Task: ${title}\n\nDescription: ${description}\n\nPlease work on this task and provide updates on your progress.`
+    const cwd = folderPath ? path.resolve(folderPath) : process.cwd()
+
+    const qwen = spawn('qwen', ['-y', '-p', prompt], { cwd })
+
+    qwen.stdout.on('data', (data) => {
+      const text = data.toString()
+      broadcastToTask(taskId, {
+        type: 'message',
+        role: 'assistant',
+        content: text
+      })
+    })
+
+    qwen.stderr.on('data', (data) => {
+      broadcastToTask(taskId, {
+        type: 'message',
+        role: 'system',
+        content: `Error: ${data.toString()}`
+      })
+    })
+
+    qwen.on('close', (code) => {
+      if (code === 0) {
+        taskStmts.updateStatus.run('completed', model, Date.now(), taskId)
+        broadcastToTask(taskId, { type: 'task_status', status: 'completed' })
+        resolve(true)
+      } else {
+        taskStmts.updateStatus.run('failed', model, Date.now(), taskId)
+        broadcastToTask(taskId, { type: 'task_status', status: 'failed' })
+        reject(new Error(`Qwen exited with code ${code}`))
+      }
+      runningTasks.delete(taskId)
+    })
+  })
+}
+
+app.get('/api/folders/search', async (req, res) => {
+  const query = req.query.q as string
+  const basePath = (req.query.base as string) || process.cwd()
+
+  if (!query || query.length < 2) {
+    return res.json([])
+  }
+
+  try {
+    const folders: string[] = []
+    const searchRecursive = async (dir: string, depth: number = 0) => {
+      if (depth > 3) return
+
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true })
+
+        for (const entry of entries) {
+          if (!entry.isDirectory()) continue
+          if (entry.name.startsWith('.')) continue
+          if (entry.name === 'node_modules' || entry.name === '__pycache__') continue
+
+          const fullPath = path.join(dir, entry.name)
+          const relativePath = path.relative(basePath, fullPath)
+
+          if (relativePath.toLowerCase().includes(query.toLowerCase())) {
+            folders.push(relativePath)
+          }
+
+          if (folders.length < 50) {
+            await searchRecursive(fullPath, depth + 1)
+          }
+        }
+      } catch (err) {}
+    }
+
+    await searchRecursive(basePath)
+    res.json(folders.slice(0, 20))
+  } catch (err) {
+    res.json([])
+  }
+})
+
+app.get('/api/tasks/:taskId/files', async (req, res) => {
+  const { taskId } = req.params
+  const task: any = taskStmts.getById.get(taskId)
+
+  if (!task || !task.folder_path) {
+    return res.json({ files: [], diff: '' })
+  }
+
+  try {
+    const cwd = path.resolve(task.folder_path)
+
+    const { stdout: statusOut } = await execAsync('git status --porcelain', { cwd })
+    const files = statusOut.split('\n').filter(line => line.trim()).map(line => {
+      const status = line.substring(0, 2).trim()
+      const filePath = line.substring(3)
+
+      let type: 'added' | 'modified' | 'deleted' = 'modified'
+      if (status.includes('A')) type = 'added'
+      else if (status.includes('D')) type = 'deleted'
+
+      return { path: filePath, type }
+    })
+
+    const { stdout: diffOut } = await execAsync('git diff', { cwd })
+
+    res.json({ files, diff: diffOut })
+  } catch (err) {
+    res.json({ files: [], diff: '' })
+  }
+})
+
+app.post('/api/tasks/:taskId/message', async (req, res) => {
+  const { taskId } = req.params
+  const { message } = req.body
+
+  broadcastToTask(taskId, {
+    type: 'message',
+    role: 'user',
+    content: message
+  })
+
+  res.json({ success: true })
+})
 
 const PORT = 3001
 app.listen(PORT, () => {
