@@ -10,8 +10,9 @@ export interface Task {
   session_id: string
   title: string
   content?: string
-  status: 'pending' | 'in_progress' | 'completed'
+  status: 'pending' | 'in_progress' | 'completed' | 'failed'
   priority?: 'low' | 'medium' | 'high'
+  model?: string
   created_at: number
   updated_at: number
 }
