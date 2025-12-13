@@ -218,7 +218,18 @@ with gr.Blocks() as demo:
         chat_input.submit(chat_sync, [chat_input, chatbot], [chatbot]).then(lambda: "", None, chat_input)
 
     with gr.Sidebar(open=True, position='left',width="19%"):
-        gr.Markdown("### Navigation")
+        with gr.Tabs():
+            with gr.Tab("a"):
+                gr.Markdown("### Navigation")
+            with gr.Tab("b"):
+                gr.Markdown("### Claude Agent")
+                chatbot = gr.Chatbot(height=400, show_label=False)
+                chat_input = gr.Textbox(
+                    placeholder="Message Claude...",
+                    show_label=False,
+                    container=False
+                )
+                chat_input.submit(chat_sync, [chat_input, chatbot], [chatbot]).then(lambda: "", None, chat_input)
 
     with gr.Tabs():
         with gr.Tab("Active"):
