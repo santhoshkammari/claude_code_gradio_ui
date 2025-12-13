@@ -29,11 +29,11 @@ db.exec(`
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
   );
 
-  CREATE TABLE IF NOT EXISTS messages (
+  CREATE TABLE IF NOT EXISTS activity_logs (
     id TEXT PRIMARY KEY,
     task_id TEXT NOT NULL,
-    role TEXT NOT NULL,
-    content TEXT NOT NULL,
+    type TEXT NOT NULL,
+    data TEXT NOT NULL,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
   );
@@ -51,14 +51,34 @@ const taskStmts = {
   getBySession: db.prepare('SELECT * FROM tasks WHERE session_id = ? ORDER BY created_at DESC'),
   getById: db.prepare('SELECT * FROM tasks WHERE id = ?'),
   create: db.prepare('INSERT INTO tasks (id, session_id, title, content, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
-  update: db.prepare('UPDATE tasks SET title = ?, content = ?, status = ?, priority = ?, updated_at = ? WHERE id = ?'),
+  updateStatus: db.prepare('UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?'),
   delete: db.prepare('DELETE FROM tasks WHERE id = ?')
 }
 
-const messageStmts = {
-  getByTask: db.prepare('SELECT * FROM messages WHERE task_id = ? ORDER BY created_at ASC'),
-  create: db.prepare('INSERT INTO messages (id, task_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)'),
-  deleteByTask: db.prepare('DELETE FROM messages WHERE task_id = ?')
+const activityStmts = {
+  getByTask: db.prepare('SELECT * FROM activity_logs WHERE task_id = ? ORDER BY created_at ASC'),
+  create: db.prepare('INSERT INTO activity_logs (id, task_id, type, data, created_at) VALUES (?, ?, ?, ?, ?)'),
+  deleteByTask: db.prepare('DELETE FROM activity_logs WHERE task_id = ?')
+}
+
+const taskStreams = new Map<string, Set<express.Response>>()
+const runningTasks = new Map<string, boolean>()
+
+function broadcastToTask(taskId: string, data: any) {
+  const clients = taskStreams.get(taskId)
+  if (clients) {
+    const payload = `data: ${JSON.stringify(data)}\n\n`
+    clients.forEach(client => {
+      try {
+        client.write(payload)
+      } catch (e) {
+        clients.delete(client)
+      }
+    })
+  }
+
+  const logId = `${Date.now()}-${Math.random()}`
+  activityStmts.create.run(logId, taskId, data.type, JSON.stringify(data), Date.now())
 }
 
 app.get('/api/sessions', (req, res) => {
@@ -90,34 +110,14 @@ app.post('/api/tasks', (req, res) => {
   res.json({ id, session_id, title, content, status, priority, created_at: now, updated_at: now })
 })
 
-app.put('/api/tasks/:id', (req, res) => {
-  const { title, content, status, priority } = req.body
-  const now = Date.now()
-  taskStmts.update.run(title, content, status, priority, now, req.params.id)
-  res.json({ success: true })
-})
-
 app.delete('/api/tasks/:id', (req, res) => {
   taskStmts.delete.run(req.params.id)
+  activityStmts.deleteByTask.run(req.params.id)
   res.json({ success: true })
 })
 
-app.get('/api/tasks/:id/messages', (req, res) => {
-  const messages = messageStmts.getByTask.all(req.params.id)
-  res.json(messages)
-})
-
-app.post('/api/tasks/:taskId/chat', async (req, res) => {
-  const { message } = req.body
+app.get('/api/tasks/:taskId/stream', (req, res) => {
   const { taskId } = req.params
-
-  const task = taskStmts.getById.get(taskId)
-  if (!task) {
-    return res.status(404).json({ error: 'Task not found' })
-  }
-
-  const userMsgId = `${Date.now()}-user`
-  messageStmts.create.run(userMsgId, taskId, 'user', message, Date.now())
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -125,55 +125,132 @@ app.post('/api/tasks/:taskId/chat', async (req, res) => {
     'Connection': 'keep-alive'
   })
 
-  const previousMessages = messageStmts.getByTask.all(taskId)
-  const context = previousMessages.map(m => `${m.role}: ${m.content}`).join('\n')
+  if (!taskStreams.has(taskId)) {
+    taskStreams.set(taskId, new Set())
+  }
+  taskStreams.get(taskId)!.add(res)
 
-  const fullPrompt = `Task: ${task.title}
-${task.content ? `Description: ${task.content}` : ''}
+  const existingLogs = activityStmts.getByTask.all(taskId)
+  existingLogs.forEach((log: any) => {
+    res.write(`data: ${log.data}\n\n`)
+  })
 
-Previous conversation:
-${context}
+  req.on('close', () => {
+    const clients = taskStreams.get(taskId)
+    if (clients) {
+      clients.delete(res)
+      if (clients.size === 0) {
+        taskStreams.delete(taskId)
+      }
+    }
+  })
+})
 
-User: ${message}`
+app.post('/api/tasks/:taskId/execute', async (req, res) => {
+  const { taskId } = req.params
+  const task = taskStmts.getById.get(taskId)
 
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' })
+  }
+
+  if (runningTasks.get(taskId)) {
+    return res.json({ message: 'Task already running' })
+  }
+
+  res.json({ message: 'Task execution started' })
+
+  runningTasks.set(taskId, true)
+  taskStmts.updateStatus.run('in_progress', Date.now(), taskId)
+  broadcastToTask(taskId, { type: 'task_status', status: 'in_progress' })
+
+  executeTask(taskId, task.title, task.content).catch(err => {
+    console.error('Task execution error:', err)
+    taskStmts.updateStatus.run('failed', Date.now(), taskId)
+    broadcastToTask(taskId, { type: 'task_status', status: 'failed', error: err.message })
+    runningTasks.delete(taskId)
+  })
+})
+
+async function executeTask(taskId: string, title: string, description: string) {
   try {
     const stream = query({
-      prompt: fullPrompt,
+      prompt: `Task: ${title}\n\nDescription: ${description}\n\nPlease work on this task and provide updates on your progress.`,
       options: {
         model: 'sonnet',
         systemPrompt: { type: 'preset', preset: 'claude_code' },
         tools: { type: 'preset', preset: 'claude_code' },
         permissionMode: 'bypassPermissions',
-        allowDangerouslySkipPermissions: true
+        allowDangerouslySkipPermissions: true,
+        cwd: process.cwd()
       }
     })
 
-    let fullResponse = ''
-
     for await (const msg of stream) {
       if (msg.type === 'assistant') {
-        const textContent = msg.message.content.find((c: any) => c.type === 'text')
-        if (textContent) {
-          fullResponse += textContent.text
-          res.write(`data: ${JSON.stringify({ type: 'chunk', content: textContent.text })}\n\n`)
+        for (const content of msg.message.content) {
+          if (content.type === 'text') {
+            broadcastToTask(taskId, {
+              type: 'message',
+              role: 'assistant',
+              content: content.text
+            })
+          } else if (content.type === 'tool_use') {
+            broadcastToTask(taskId, {
+              type: 'tool_use',
+              tool: content.name,
+              input: content.input
+            })
+          }
+        }
+      } else if (msg.type === 'user') {
+        for (const content of msg.message.content) {
+          if (content.type === 'text') {
+            broadcastToTask(taskId, {
+              type: 'message',
+              role: 'user',
+              content: content.text
+            })
+          } else if (content.type === 'tool_result') {
+            broadcastToTask(taskId, {
+              type: 'tool_result',
+              tool: content.tool_use_id,
+              content: typeof content.content === 'string' ? content.content : JSON.stringify(content.content)
+            })
+          }
         }
       } else if (msg.type === 'result') {
         if (msg.subtype === 'success') {
-          fullResponse = msg.result
+          broadcastToTask(taskId, {
+            type: 'message',
+            role: 'assistant',
+            content: `Task completed successfully!\n\nResult: ${msg.result}`
+          })
+          taskStmts.updateStatus.run('completed', Date.now(), taskId)
+          broadcastToTask(taskId, { type: 'task_status', status: 'completed' })
+        } else {
+          broadcastToTask(taskId, {
+            type: 'message',
+            role: 'assistant',
+            content: `Task failed: ${msg.subtype}`
+          })
+          taskStmts.updateStatus.run('failed', Date.now(), taskId)
+          broadcastToTask(taskId, { type: 'task_status', status: 'failed' })
         }
       }
     }
-
-    const assistantMsgId = `${Date.now()}-assistant`
-    messageStmts.create.run(assistantMsgId, taskId, 'assistant', fullResponse, Date.now())
-
-    res.write(`data: ${JSON.stringify({ type: 'done', content: fullResponse })}\n\n`)
-    res.end()
   } catch (error: any) {
-    res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`)
-    res.end()
+    broadcastToTask(taskId, {
+      type: 'message',
+      role: 'system',
+      content: `Error: ${error.message}`
+    })
+    taskStmts.updateStatus.run('failed', Date.now(), taskId)
+    broadcastToTask(taskId, { type: 'task_status', status: 'failed', error: error.message })
+  } finally {
+    runningTasks.delete(taskId)
   }
-})
+}
 
 const PORT = 3001
 app.listen(PORT, () => {

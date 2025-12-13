@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import type { Session, Task, Message } from './types'
 
@@ -9,10 +9,12 @@ function App() {
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  const [messages, setMessages] = useState<Message[]>([])
-  const [inputMessage, setInputMessage] = useState('')
+  const [activityLog, setActivityLog] = useState<any[]>([])
   const [taskFilter, setTaskFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all')
-  const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [newTaskDescription, setNewTaskDescription] = useState('')
+  const activityEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchSessions()
@@ -26,9 +28,13 @@ function App() {
 
   useEffect(() => {
     if (selectedTask) {
-      fetchMessages(selectedTask.id)
+      connectToTaskStream(selectedTask.id)
     }
   }, [selectedTask])
+
+  useEffect(() => {
+    activityEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [activityLog])
 
   const fetchSessions = async () => {
     const res = await fetch(`${API_URL}/sessions`)
@@ -45,10 +51,29 @@ function App() {
     setTasks(data)
   }
 
-  const fetchMessages = async (taskId: string) => {
-    const res = await fetch(`${API_URL}/tasks/${taskId}/messages`)
-    const data = await res.json()
-    setMessages(data)
+  const connectToTaskStream = (taskId: string) => {
+    setActivityLog([])
+    const eventSource = new EventSource(`${API_URL}/tasks/${taskId}/stream`)
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data)
+      setActivityLog(prev => [...prev, data])
+
+      if (data.type === 'task_status') {
+        setTasks(prev => prev.map(t =>
+          t.id === taskId ? { ...t, status: data.status } : t
+        ))
+        if (data.status === 'completed' || data.status === 'failed') {
+          eventSource.close()
+        }
+      }
+    }
+
+    eventSource.onerror = () => {
+      eventSource.close()
+    }
+
+    return () => eventSource.close()
   }
 
   const createSession = async () => {
@@ -73,25 +98,30 @@ function App() {
     }
   }
 
-  const createTask = async () => {
-    if (!currentSession) return
+  const handleCreateTask = async () => {
+    if (!currentSession || !newTaskTitle.trim() || !newTaskDescription.trim()) return
 
     const id = Date.now().toString()
-    const title = `Task ${tasks.length + 1}`
     const res = await fetch(`${API_URL}/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id,
         session_id: currentSession.id,
-        title,
-        content: '',
+        title: newTaskTitle,
+        content: newTaskDescription,
         status: 'pending',
         priority: 'medium'
       })
     })
     const newTask = await res.json()
     setTasks([newTask, ...tasks])
+    setShowTaskModal(false)
+    setNewTaskTitle('')
+    setNewTaskDescription('')
+
+    await fetch(`${API_URL}/tasks/${id}/execute`, { method: 'POST' })
+    fetchTasks(currentSession.id)
   }
 
   const deleteTask = async (id: string) => {
@@ -100,87 +130,7 @@ function App() {
     setTasks(updated)
     if (selectedTask?.id === id) {
       setSelectedTask(null)
-      setMessages([])
-    }
-  }
-
-  const updateTaskStatus = async (id: string, status: Task['status']) => {
-    const task = tasks.find(t => t.id === id)
-    if (!task) return
-
-    await fetch(`${API_URL}/tasks/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...task,
-        status,
-        updated_at: Date.now()
-      })
-    })
-
-    setTasks(tasks.map(t => t.id === id ? { ...t, status } : t))
-    if (selectedTask?.id === id) {
-      setSelectedTask({ ...selectedTask, status })
-    }
-  }
-
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !selectedTask) return
-
-    setIsLoadingAI(true)
-    setInputMessage('')
-
-    const userMsg: Message = {
-      id: `${Date.now()}-user`,
-      task_id: selectedTask.id,
-      role: 'user',
-      content: inputMessage,
-      created_at: Date.now()
-    }
-    setMessages([...messages, userMsg])
-
-    try {
-      const response = await fetch(`${API_URL}/tasks/${selectedTask.id}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: inputMessage })
-      })
-
-      const reader = response.body?.getReader()
-      if (!reader) return
-
-      let aiResponse = ''
-      const decoder = new TextDecoder()
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n\n')
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6))
-            if (data.type === 'chunk') {
-              aiResponse += data.content
-            } else if (data.type === 'done') {
-              const assistantMsg: Message = {
-                id: `${Date.now()}-assistant`,
-                task_id: selectedTask.id,
-                role: 'assistant',
-                content: data.content,
-                created_at: Date.now()
-              }
-              setMessages(prev => [...prev, assistantMsg])
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('AI error:', error)
-    } finally {
-      setIsLoadingAI(false)
+      setActivityLog([])
     }
   }
 
@@ -235,10 +185,10 @@ function App() {
           <div className="task-filters">
             <button className={`filter-btn ${taskFilter === 'all' ? 'active' : ''}`} onClick={() => setTaskFilter('all')}>All</button>
             <button className={`filter-btn ${taskFilter === 'pending' ? 'active' : ''}`} onClick={() => setTaskFilter('pending')}>Pending</button>
-            <button className={`filter-btn ${taskFilter === 'in_progress' ? 'active' : ''}`} onClick={() => setTaskFilter('in_progress')}>In Progress</button>
+            <button className={`filter-btn ${taskFilter === 'in_progress' ? 'active' : ''}`} onClick={() => setTaskFilter('in_progress')}>Running</button>
             <button className={`filter-btn ${taskFilter === 'completed' ? 'active' : ''}`} onClick={() => setTaskFilter('completed')}>Completed</button>
           </div>
-          <button className="new-task-btn" onClick={createTask}>+ New Task</button>
+          <button className="new-task-btn" onClick={() => setShowTaskModal(true)}>+ New Task</button>
         </header>
 
         <div className="tasks-grid">
@@ -251,18 +201,9 @@ function App() {
               <div className="task-header">
                 <div className="task-priority" data-priority={task.priority}></div>
                 <div className="task-title">{task.title}</div>
-                <select
-                  className={`task-status-select status-${task.status}`}
-                  value={task.status}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    updateTaskStatus(task.id, e.target.value as Task['status'])
-                  }}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                </select>
+                <div className={`task-status-badge status-${task.status}`}>
+                  {task.status === 'in_progress' ? '⚡' : task.status === 'completed' ? '✓' : task.status === 'failed' ? '✗' : '○'}
+                </div>
               </div>
               {task.content && <div className="task-content">{task.content}</div>}
               <div className="task-footer">
@@ -277,64 +218,93 @@ function App() {
       <aside className="right-sidebar glass">
         <div className="chat-header">
           <div className="chat-title">{selectedTask ? selectedTask.title : 'Select a task'}</div>
-          <div className="chat-model">Sonnet 4.5</div>
+          <div className="chat-model">{selectedTask ? `Status: ${selectedTask.status}` : 'AI Agent'}</div>
         </div>
 
-        <div className="messages-container">
+        <div className="activity-container">
           {selectedTask ? (
-            messages.map(message => (
-              <div key={message.id} className={`message ${message.role}`}>
-                <div className="message-avatar">
-                  {message.role === 'user' ? '👤' : '🤖'}
+            <>
+              {activityLog.map((log, idx) => (
+                <div key={idx} className="activity-item">
+                  {log.type === 'tool_use' && (
+                    <div className="tool-activity">
+                      <div className="tool-header">
+                        <span className="tool-icon">🔧</span>
+                        <span className="tool-name">{log.tool}</span>
+                      </div>
+                      <div className="tool-input">{JSON.stringify(log.input, null, 2)}</div>
+                    </div>
+                  )}
+                  {log.type === 'tool_result' && (
+                    <div className="tool-result">
+                      <div className="result-header">
+                        <span className="result-icon">✓</span>
+                        <span>Result</span>
+                      </div>
+                      <div className="result-content">{log.content}</div>
+                    </div>
+                  )}
+                  {log.type === 'message' && (
+                    <div className={`agent-message ${log.role}`}>
+                      <div className="message-role">{log.role === 'assistant' ? '🤖 AI' : '👤 User'}</div>
+                      <div className="message-text">{log.content}</div>
+                    </div>
+                  )}
+                  {log.type === 'task_status' && (
+                    <div className="status-update">
+                      <span className="status-icon">📊</span>
+                      <span>Task {log.status}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="message-content glass">
-                  <div className="message-text">{message.content}</div>
-                  <div className="message-time">
-                    {new Date(message.created_at).toLocaleTimeString()}
-                  </div>
-                </div>
-              </div>
-            ))
+              ))}
+              <div ref={activityEndRef} />
+            </>
           ) : (
             <div className="empty-state">
               <div className="empty-icon">📋</div>
-              <div className="empty-text">Select a task to start chatting with AI</div>
-            </div>
-          )}
-          {isLoadingAI && (
-            <div className="loading-indicator">
-              <div className="loading-dots">
-                <span></span><span></span><span></span>
-              </div>
+              <div className="empty-text">Select a task to see AI agent activity</div>
             </div>
           )}
         </div>
+      </aside>
 
-        {selectedTask && (
-          <div className="chat-input-container">
-            <div className="chat-input glass">
-              <input
-                type="text"
-                placeholder="Ask AI about this task..."
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isLoadingAI && handleSendMessage()}
-                disabled={isLoadingAI}
-              />
-              <div className="input-actions">
-                <button className="input-btn">📎</button>
-                <button
-                  className="input-btn send"
-                  onClick={handleSendMessage}
-                  disabled={isLoadingAI}
-                >
-                  ➤
-                </button>
+      {showTaskModal && (
+        <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>
+          <div className="modal glass" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Create New Task</h2>
+              <button className="modal-close" onClick={() => setShowTaskModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Task Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Build authentication system"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Task Description</label>
+                <textarea
+                  placeholder="Describe what you want the AI to do..."
+                  value={newTaskDescription}
+                  onChange={(e) => setNewTaskDescription(e.target.value)}
+                  className="form-textarea"
+                  rows={6}
+                />
               </div>
             </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowTaskModal(false)}>Cancel</button>
+              <button className="btn-primary" onClick={handleCreateTask}>Create & Start Task</button>
+            </div>
           </div>
-        )}
-      </aside>
+        </div>
+      )}
     </div>
   )
 }
