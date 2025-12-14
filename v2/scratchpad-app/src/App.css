@@ -437,8 +437,8 @@ body {
 .task-delete-btn {
   padding: 4px 10px;
   border: none;
-  background: #f5f5f5;
-  color: #666;
+  background: #f8a5a5; /* Light red/brick red */
+  color: #7a1e1e;     /* Darker red text for contrast */
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -447,8 +447,8 @@ body {
 }
 
 .task-delete-btn:hover {
-  background: #ffe5e5;
-  color: #dc2626;
+  background: #ff8787; /* Slightly darker red on hover */
+  color: #5c0d0d;
 }
 
 .unified-start-btn-wrapper {
