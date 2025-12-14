@@ -22,6 +22,7 @@ function App() {
   const [folderSuggestions, setFolderSuggestions] = useState<string[]>([])
   const [chatInput, setChatInput] = useState('')
   const [selectedModel, setSelectedModel] = useState('sonnet')
+  const [showSidebar, setShowSidebar] = useState(false)
   const activityEndRef = useRef<HTMLDivElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -207,11 +208,13 @@ function App() {
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task)
     setShowChat(true)
+    setShowSidebar(true)
   }
 
   const handleBackToTasks = () => {
     setShowChat(false)
     setSelectedTask(null)
+    setShowSidebar(false)
   }
 
   const startTask = async (model: string) => {
@@ -274,7 +277,7 @@ function App() {
   const filteredTasks = tasks.filter(task => taskFilter === 'all' || task.status === taskFilter)
 
   return (
-    <div className="app">
+    <div className={`app ${showSidebar ? 'sidebar-visible' : 'sidebar-hidden'}`}>
       <aside className="left-sidebar glass">
         <div className="sidebar-header">
           <div className="logo">
@@ -480,6 +483,7 @@ function App() {
       <aside className="right-sidebar glass">
         <div className="files-header">
           <div className="files-title">Activity & Files</div>
+          <button className="close-sidebar-btn" onClick={handleBackToTasks}>×</button>
         </div>
 
         <div className="files-container">
