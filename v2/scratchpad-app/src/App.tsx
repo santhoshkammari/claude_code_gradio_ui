@@ -351,20 +351,28 @@ function App() {
                   <div className="task-footer">
                     <div className="task-date">{new Date(task.created_at).toLocaleDateString()}</div>
                     <div className="task-footer-actions">
+                      <button className="task-delete-btn" onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }}>Delete</button>
                       {task.status === 'pending' && (
-                        <div className="start-btn-group">
-                          <button className="start-btn" onClick={(e) => { e.stopPropagation(); startTaskFromCard(task.id, 'sonnet'); }}>
-                            ▶ Start
+                        <div className="unified-start-btn-wrapper">
+                          <button
+                            className="unified-start-btn"
+                            onClick={(e) => { e.stopPropagation(); startTaskFromCard(task.id, 'sonnet'); }}
+                          >
+                            <span className="start-text">Start</span>
+                            <span className="start-divider"></span>
+                            <select
+                              className="start-dropdown-trigger"
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => { e.stopPropagation(); if(e.target.value) startTaskFromCard(task.id, e.target.value); }}
+                            >
+                              <option value="">▼</option>
+                              <option value="sonnet">Sonnet</option>
+                              <option value="haiku">Haiku</option>
+                              <option value="qwen">Qwen</option>
+                            </select>
                           </button>
-                          <select className="model-select" onClick={(e) => e.stopPropagation()} onChange={(e) => { e.stopPropagation(); startTaskFromCard(task.id, e.target.value); }}>
-                            <option value="">▼</option>
-                            <option value="sonnet">Sonnet</option>
-                            <option value="haiku">Haiku</option>
-                            <option value="qwen">Qwen</option>
-                          </select>
                         </div>
                       )}
-                      <button className="task-action-btn" onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }}>🗑️</button>
                     </div>
                   </div>
                 </div>

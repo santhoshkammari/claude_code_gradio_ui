@@ -430,48 +430,88 @@ body {
 
 .task-footer-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
-.start-btn-group {
-  display: flex;
-  gap: 0;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
-}
-
-.start-btn {
-  padding: 6px 12px;
+.task-delete-btn {
+  padding: 4px 10px;
   border: none;
-  background: linear-gradient(135deg, #60a5fa, #3b82f6);
-  color: white;
+  background: #f5f5f5;
+  color: #666;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  border-radius: 6px;
+  transition: all 0.15s;
 }
 
-.start-btn:hover {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  transform: translateY(-1px);
+.task-delete-btn:hover {
+  background: #ffe5e5;
+  color: #dc2626;
 }
 
-.model-select {
-  padding: 6px 8px;
+.unified-start-btn-wrapper {
+  position: relative;
+}
+
+.unified-start-btn {
+  padding: 4px 10px;
   border: none;
-  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  background: #5b8def;
   color: white;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   outline: none;
+  transition: all 0.15s;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
 }
 
-.model-select option {
+.unified-start-btn:hover {
+  background: #4a7de0;
+}
+
+.start-text {
+  pointer-events: none;
+}
+
+.start-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+.start-dropdown-trigger {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.start-dropdown-trigger option {
   background: #ffffff;
   color: #1a1a1a;
+  padding: 8px;
+}
+
+.unified-start-btn::after {
+  content: '▼';
+  font-size: 8px;
+  pointer-events: none;
 }
 
 .task-model-badge {
@@ -481,27 +521,6 @@ body {
   background: rgba(59, 130, 246, 0.1);
   border-radius: 6px;
   width: fit-content;
-}
-
-.task-action-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
-}
-
-.task-action-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  transform: scale(1.1);
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
 }
 
 .right-sidebar {
