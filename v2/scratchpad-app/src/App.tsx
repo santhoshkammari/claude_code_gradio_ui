@@ -22,6 +22,7 @@ function App() {
   const [folderSuggestions, setFolderSuggestions] = useState<string[]>([])
   const [chatInput, setChatInput] = useState('')
   const [selectedModel, setSelectedModel] = useState('sonnet')
+  const [showSidebar, setShowSidebar] = useState(false)
   const activityEndRef = useRef<HTMLDivElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -207,11 +208,13 @@ function App() {
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task)
     setShowChat(true)
+    setShowSidebar(true)
   }
 
   const handleBackToTasks = () => {
     setShowChat(false)
     setSelectedTask(null)
+    setShowSidebar(false)
   }
 
   const startTask = async (model: string) => {
@@ -274,7 +277,7 @@ function App() {
   const filteredTasks = tasks.filter(task => taskFilter === 'all' || task.status === taskFilter)
 
   return (
-    <div className="app">
+    <div className={`app ${showSidebar ? 'sidebar-visible' : 'sidebar-hidden'}`}>
       <aside className="left-sidebar glass">
         <div className="sidebar-header">
           <div className="logo">
@@ -401,25 +404,71 @@ function App() {
                 <div ref={chatEndRef} />
               </div>
 
-              <div className="chat-input-container glass">
-                <select
-                  className="model-selector"
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                >
-                  <option value="sonnet">Sonnet 4.5</option>
-                  <option value="haiku">Haiku</option>
-                  <option value="qwen">Qwen</option>
-                </select>
-                <input
-                  type="text"
-                  className="chat-input"
-                  placeholder="Message the AI agent..."
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                />
-                <button className="send-btn" onClick={() => sendMessage()}>Send</button>
+              <div className="chat-input-wrapper">
+                <div className="input-status-bar">
+                  <span className="status-dot"></span>
+                  <span className="status-text">Copy is idle</span>
+                </div>
+
+                <div className="input-content-section">
+                  {/* Text Input Field FIRST */}
+                  <div className="input-field-wrapper">
+                    <textarea
+                      className="message-input-field"
+                      placeholder=""
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          sendMessage()
+                        }
+                      }}
+                      rows={1}
+                    />
+                  </div>
+
+                  {/* THEN Controls Row Below - Model selector LEFT, buttons RIGHT */}
+                  <div className="input-controls-bottom">
+                    <div className="model-selector-wrapper">
+                      <button className="model-selector-btn" onClick={() => {}}>
+                        <span className="model-avatar">AI</span>
+                        <span className="model-text">{selectedModel === 'sonnet' ? 'Sonnet 4.5' : selectedModel === 'haiku' ? 'Haiku' : 'Qwen'}</span>
+                        <span className="model-arrow">▼</span>
+                      </button>
+                      <select
+                        className="hidden-model-select"
+                        value={selectedModel}
+                        onChange={(e) => setSelectedModel(e.target.value)}
+                      >
+                        <option value="sonnet">Sonnet 4.5</option>
+                        <option value="haiku">Haiku</option>
+                        <option value="qwen">Qwen</option>
+                      </select>
+                    </div>
+
+                    <div className="action-buttons-row">
+                      <div className="reason-badge-display">
+                        <span className="reason-text">REASON</span>
+                        <span className="reason-number">2</span>
+                      </div>
+                      <button className="action-icon-btn export-btn" title="Export" onClick={() => {}}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="7 10 12 15 17 10"></polyline>
+                          <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                      </button>
+                      <button className="action-icon-btn send-btn-icon" onClick={() => sendMessage()} title="Send">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="22" y1="2" x2="11" y2="13"></line>
+                          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {selectedTask?.status === 'pending' && (
                   <button className="start-task-btn" onClick={() => startTask(selectedModel)}>
                     ▶ Start Task
@@ -434,6 +483,7 @@ function App() {
       <aside className="right-sidebar glass">
         <div className="files-header">
           <div className="files-title">Activity & Files</div>
+          <button className="close-sidebar-btn" onClick={handleBackToTasks}>×</button>
         </div>
 
         <div className="files-container">
