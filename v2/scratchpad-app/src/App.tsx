@@ -274,6 +274,15 @@ function App() {
 
   const filteredTasks = tasks.filter(task => taskFilter === 'all' || task.status === taskFilter)
 
+  // Helper function to truncate text to 2 lines max
+  const truncateText = (text: string, maxLength: number = 120) => {
+    if (!text) return '';
+    if (text.length <= maxLength) {
+      return text;
+    }
+    return text.substring(0, maxLength) + '...';
+  };
+
   return (
     <div className={`app ${showSidebar ? 'sidebar-visible' : 'sidebar-hidden'}`}>
       <aside className="left-sidebar glass">
@@ -345,7 +354,7 @@ function App() {
                       {task.status === 'in_progress' ? '⚡' : task.status === 'completed' ? '✓' : task.status === 'failed' ? '✗' : '○'}
                     </div>
                   </div>
-                  {task.content && <div className="task-content">{task.content}</div>}
+                  {task.content && <div className="task-content">{truncateText(task.content)}</div>}
                   {task.folder_path && <div className="task-folder">📁 {task.folder_path}</div>}
                   {task.model && <div className="task-model-badge">Agent: {task.model}</div>}
                   <div className="task-footer">
