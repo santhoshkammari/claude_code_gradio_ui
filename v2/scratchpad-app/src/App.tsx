@@ -420,11 +420,6 @@ function App() {
               </div>
 
               <div className="chat-input-wrapper">
-                <div className="input-status-bar">
-                  <span className="status-dot"></span>
-                  <span className="status-text">Copy is idle</span>
-                </div>
-
                 <div className="input-content-section">
                   {/* Text Input Field FIRST */}
                   <div className="input-field-wrapper">
