@@ -189,7 +189,7 @@ function App() {
       body: JSON.stringify({
         id,
         session_id: session.id,
-        title: newTaskDescription.substring(0, 50) + (newTaskDescription.length > 50 ? '...' : ''), // Use first 50 chars of description as title
+        title: newTaskDescription.substring(0, 30) + (newTaskDescription.length > 30 ? '...' : ''), // Use first 50 chars of description as title
         content: newTaskDescription,
         status: 'pending',
         priority: 'medium',
