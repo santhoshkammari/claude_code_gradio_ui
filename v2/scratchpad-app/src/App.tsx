@@ -16,7 +16,6 @@ function App() {
   const [gitDiff, setGitDiff] = useState<string>('')
   const [taskFilter, setTaskFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all')
   const [showTaskModal, setShowTaskModal] = useState(false)
-  const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskDescription, setNewTaskDescription] = useState('')
   const [newTaskFolder, setNewTaskFolder] = useState('')
   const [folderSuggestions, setFolderSuggestions] = useState<string[]>([])
@@ -167,7 +166,7 @@ function App() {
   }
 
   const handleCreateTask = async () => {
-    if (!newTaskTitle.trim() || !newTaskDescription.trim()) return
+    if (!newTaskDescription.trim()) return
 
     let session = currentSession
     if (!session) {
@@ -190,7 +189,7 @@ function App() {
       body: JSON.stringify({
         id,
         session_id: session.id,
-        title: newTaskTitle,
+        title: newTaskDescription.substring(0, 50) + (newTaskDescription.length > 50 ? '...' : ''), // Use first 50 chars of description as title
         content: newTaskDescription,
         status: 'pending',
         priority: 'medium',
@@ -200,7 +199,6 @@ function App() {
     const newTask = await res.json()
     setTasks([newTask, ...tasks])
     setShowTaskModal(false)
-    setNewTaskTitle('')
     setNewTaskDescription('')
     setNewTaskFolder('')
   }
@@ -566,16 +564,6 @@ function App() {
               <button className="modal-close" onClick={() => setShowTaskModal(false)}>×</button>
             </div>
             <div className="modal-body">
-              <div className="form-group">
-                <label>Task Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Build authentication system"
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  className="form-input"
-                />
-              </div>
               <div className="form-group">
                 <label>Folder Path (optional)</label>
                 <input
