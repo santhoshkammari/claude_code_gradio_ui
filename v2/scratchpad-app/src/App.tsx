@@ -420,25 +420,20 @@ function App() {
               </div>
 
               <div className="chat-input-wrapper">
-                <div className="input-content-section">
-                  {/* Text Input Field FIRST */}
-                  <div className="input-field-wrapper">
-                    <textarea
-                      className="message-input-field"
-                      placeholder=""
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          sendMessage()
-                        }
-                      }}
-                      rows={1}
-                    />
-                  </div>
-
-                  {/* THEN Controls Row Below - Model selector LEFT, buttons RIGHT */}
+                <div className="input-field-wrapper">
+                  <textarea
+                    className="message-input-field"
+                    placeholder="Message..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        sendMessage()
+                      }
+                    }}
+                    rows={1}
+                  />
                   <div className="input-controls-bottom">
                     <div className="model-selector-wrapper">
                       <button className="model-selector-btn" onClick={() => {}}>
