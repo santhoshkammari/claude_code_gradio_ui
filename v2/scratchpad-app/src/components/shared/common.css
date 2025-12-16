@@ -8,13 +8,13 @@
   /* Dark theme variables (default) */
   --bg-primary: #1F1F1F;
   --bg-secondary: #262626;
-  --bg-tertiary: #333333;
-  --bg-card: rgba(38, 38, 38, 0.6);
+  --bg-tertiary: #262626;
+  --bg-card: rgba(31, 31, 31, 0.6);
   --text-primary: #e0e0e0;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #909090;
   --border-color: rgba(255, 255, 255, 0.1);
-  --glass-bg: rgba(38, 38, 38, 0.6);
+  --glass-bg: rgba(31, 31, 31, 0.6);
   --glass-border: rgba(255, 255, 255, 0.1);
   --accent-primary: #008FE5;
   --accent-secondary: #0EA5E9;
@@ -22,8 +22,8 @@
   --warning: #f59e0b;
   --danger: #ef4444;
   --info: #3b82f6;
-  --scrollbar-track: rgba(255, 255, 255, 0.05);
-  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --scrollbar-track: rgba(38, 38, 38, 0.4);
+  --scrollbar-thumb: rgba(38, 38, 38, 0.8);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
 }
 
