@@ -122,6 +122,57 @@ function App() {
     }
   }
 
+  const parseStreamJsonMessage = (data: any, taskId: string) => {
+    try {
+      // Determine if this is a Qwen stream-json message
+      if (data.type && (data.type === 'system' || data.type === 'assistant' || data.type === 'result')) {
+        // Handle Qwen stream-json format
+        switch (data.type) {
+          case 'system':
+            if (data.subtype === 'init') {
+              // This is an initialization message, we can ignore it for chat display
+              return { type: 'system_init', role: 'system', content: 'Qwen initialized' };
+            }
+            break;
+          case 'assistant':
+            if (data.message?.content) {
+              // Extract text content from assistant message
+              const textContent = data.message.content
+                .filter((item: any) => item?.type === 'text')
+                .map((item: any) => item?.text)
+                .filter(Boolean) // Remove undefined/null values
+                .join(' ');
+
+              if (textContent) {
+                return { type: 'message', role: 'assistant', content: textContent };
+              }
+
+              // Check if there are tool_use messages
+              const toolContent = data.message.content
+                .filter((item: any) => item?.type === 'tool_use')
+                .map((item: any) => `Using tool: ${item?.name || 'unknown'} with input: ${JSON.stringify(item?.input || {})}`)
+                .join(' ');
+
+              if (toolContent) {
+                return { type: 'message', role: 'assistant', content: toolContent };
+              }
+            }
+            break;
+          case 'result':
+            // Handle result message
+            const resultContent = data.result || `Task completed with ${data.num_turns || 0} turns`;
+            return { type: 'message', role: 'assistant', content: resultContent };
+        }
+      }
+    } catch (parseError) {
+      console.error('Error parsing stream-json message:', parseError);
+      console.error('Problematic data:', data);
+    }
+
+    // If it's not a stream-json message or parsing failed, return the original data
+    return data;
+  };
+
   const connectToTaskStream = (taskId: string) => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
@@ -135,22 +186,30 @@ function App() {
     eventSourceRef.current = eventSource
 
     eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      setActivityLog(prev => [...prev, data])
+      try {
+        const raw_data = JSON.parse(event.data);
+        const data = parseStreamJsonMessage(raw_data, taskId);
+        setActivityLog(prev => [...prev, data])
 
-      if (data.type === 'message') {
-        setChatMessages(prev => [...prev, data])
-      }
-
-      if (data.type === 'task_status') {
-        setTasks(prev => prev.map(t =>
-          t.id === taskId ? { ...t, status: data.status } : t
-        ))
-        if (data.status === 'completed' || data.status === 'failed') {
-          eventSource.close()
-          eventSourceRef.current = null
-          fetchFileChanges(taskId)
+        // Only add messages to chat that are of type 'message' and not system_init
+        if (data.type === 'message' && data.role !== 'system') {
+          setChatMessages(prev => [...prev, data])
         }
+
+        if (data.type === 'task_status') {
+          setTasks(prev => prev.map(t =>
+            t.id === taskId ? { ...t, status: data.status } : t
+          ))
+          if (data.status === 'completed' || data.status === 'failed') {
+            eventSource.close()
+            eventSourceRef.current = null
+            fetchFileChanges(taskId)
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing stream data:', error);
+        // Log the raw event data for debugging
+        console.error('Raw event data:', event.data);
       }
     }
 

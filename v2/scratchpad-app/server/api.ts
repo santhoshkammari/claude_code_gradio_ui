@@ -298,26 +298,59 @@ async function executeQwenTask(taskId: string, title: string, description: strin
     const prompt = `Task: ${title}\n\nDescription: ${description}\n\nPlease work on this task and provide updates on your progress.`
     const cwd = folderPath ? path.resolve(folderPath) : process.cwd()
 
-    const qwen = spawn('qwen', ['-y', '-p', prompt], { cwd })
+    // Use stream-json output format for Qwen
+    const qwen = spawn('qwen', ['-y', '-o', 'stream-json', '-p', prompt], { cwd })
 
+    let buffer = '';
     qwen.stdout.on('data', (data) => {
-      const text = data.toString()
-      broadcastToTask(taskId, {
-        type: 'message',
-        role: 'assistant',
-        content: text
-      })
+      buffer += data.toString();
+
+      // Process complete JSON lines from the buffer
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.trim()) {
+          try {
+            const jsonMsg = JSON.parse(line.trim());
+            broadcastToTask(taskId, jsonMsg);
+          } catch (e) {
+            console.error('Error parsing Qwen stream-json:', e);
+            // Send as a regular message if JSON parsing fails
+            broadcastToTask(taskId, {
+              type: 'message',
+              role: 'assistant',
+              content: line.trim()
+            });
+          }
+        }
+      }
     })
 
     qwen.stderr.on('data', (data) => {
       broadcastToTask(taskId, {
         type: 'message',
         role: 'system',
-        content: `Error: ${data.toString()}`
+        content: `Qwen Error: ${data.toString()}`
       })
     })
 
     qwen.on('close', (code) => {
+      // Process any remaining data in buffer
+      if (buffer.trim()) {
+        try {
+          const jsonMsg = JSON.parse(buffer.trim());
+          broadcastToTask(taskId, jsonMsg);
+        } catch (e) {
+          // Send as a regular message if JSON parsing fails
+          broadcastToTask(taskId, {
+            type: 'message',
+            role: 'assistant',
+            content: buffer.trim()
+          });
+        }
+      }
+
       if (code === 0) {
         taskStmts.updateStatus.run('completed', model, Date.now(), taskId)
         broadcastToTask(taskId, { type: 'task_status', status: 'completed' })
