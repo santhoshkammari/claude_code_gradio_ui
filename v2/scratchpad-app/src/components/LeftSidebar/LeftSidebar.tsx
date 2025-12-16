@@ -1,5 +1,7 @@
 import './LeftSidebar.css'
+import '../shared/ThemeToggle.css'
 import type { Session, Task } from '../../types'
+import ThemeToggle from '../shared/ThemeToggle'
 
 interface LeftSidebarProps {
   sessions: Session[]
@@ -33,6 +35,7 @@ export default function LeftSidebar({
           <div className="logo-icon">🤖</div>
           <span>Scratchpad AI</span>
         </div>
+        <ThemeToggle />
       </div>
 
       <div className="sessions-section">
@@ -90,7 +93,7 @@ export default function LeftSidebar({
             )
           })}
         </div>
-        <button className="new-session-btn glass-btn" onClick={onNewSession}>+ New Session</button>
+        <button className="new-session-btn" onClick={onNewSession}>+ New Session</button>
       </div>
 
       <div className="profile-section">

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "RunSubAgents": {
+      "command": "python",
+      "args": [
+        "/home/ntlpt24/agilab/src/mcp_tools/agents.py"
+      ]
+    }
+  },
+  "$version": 2
+}

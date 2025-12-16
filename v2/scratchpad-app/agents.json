@@ -1,0 +1,26 @@
+[
+  {
+    "id": "update-chatview-css",
+    "description": "Update ChatView CSS to use theme variables",
+    "system_prompt": "You are a CSS expert tasked with updating the ChatView CSS file to use theme variables for dark mode support.",
+    "task": "Update the ChatView CSS file at /home/ntlpt24/code/claude_code_gradio_ui/v2/scratchpad-app/src/components/ChatView/ChatView.css to use CSS variables for dark mode. Replace all hardcoded color values with CSS variables from the theme system. The key changes needed are: 1. Replace text colors like #1a1a1a, #64748b, #0f172a with appropriate theme variables 2. Replace background colors like rgba(255, 255, 255, 0.8) with var(--bg-card) or other appropriate theme variables 3. Update border colors to use var(--border-color) or other theme-based values 4. Make sure message bubbles, input field, and other UI elements work properly in both themes 5. Update hover states to use theme variables 6. Make sure message content and user bubbles use proper theme colors",
+    "tools": ["read_file", "edit"],
+    "model": "default"
+  },
+  {
+    "id": "update-rightsidebar-css",
+    "description": "Update RightSidebar CSS to use theme variables",
+    "system_prompt": "You are a CSS expert tasked with updating the RightSidebar CSS file to use theme variables for dark mode support.",
+    "task": "Update the RightSidebar CSS file at /home/ntlpt24/code/claude_code_gradio_ui/v2/scratchpad-app/src/components/RightSidebar/RightSidebar.css to use CSS variables for dark mode. Replace all hardcoded color values with CSS variables from the theme system. The key changes needed are: 1. Replace text colors like #1a1a1a, #64748b with appropriate theme variables 2. Replace background colors like rgba(255, 255, 255, 0.6) with var(--bg-card) or other appropriate theme variables 3. Update border colors to use var(--border-color) or other theme-based values 4. Make sure file items, diff content, and other UI elements work properly in both themes 5. Update hover states to use theme variables 6. Make sure activity items use proper theme colors",
+    "tools": ["read_file", "edit"],
+    "model": "default"
+  },
+  {
+    "id": "update-modal-css",
+    "description": "Update Modal CSS to use theme variables",
+    "system_prompt": "You are a CSS expert tasked with updating the Modal CSS file to use theme variables for dark mode support.",
+    "task": "Update the Modal CSS file at /home/ntlpt24/code/claude_code_gradio_ui/v2/scratchpad-app/src/components/Modals/Modal.css to use CSS variables for dark mode. Replace all hardcoded color values with CSS variables from the theme system. The key changes needed are: 1. Replace text colors like #1a1a1a, #64748b with appropriate theme variables 2. Replace background colors like rgba(255, 255, 255, 0.8) with var(--bg-card) or other appropriate theme variables 3. Update border colors to use var(--border-color) or other theme-based values 4. Make sure form inputs, buttons, and other UI elements work properly in both themes 5. Update hover states to use theme variables 6. Make sure modal content uses proper theme colors",
+    "tools": ["read_file", "edit"],
+    "model": "default"
+  }
+]
