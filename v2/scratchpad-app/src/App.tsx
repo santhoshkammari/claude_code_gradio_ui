@@ -19,9 +19,13 @@ function App() {
   const [newTaskDescription, setNewTaskDescription] = useState('')
   const [newTaskFolder, setNewTaskFolder] = useState('')
   const [folderSuggestions, setFolderSuggestions] = useState<string[]>([])
+  const [showNewSessionModal, setShowNewSessionModal] = useState(false)
+  const [newSessionFolder, setNewSessionFolder] = useState('')
+  const [newSessionFolderSuggestions, setNewSessionFolderSuggestions] = useState<string[]>([])
   const [chatInput, setChatInput] = useState('')
   const [selectedModel, setSelectedModel] = useState('sonnet')
   const [showSidebar, setShowSidebar] = useState(false)
+  const [collapsedSessions, setCollapsedSessions] = useState<Record<string, boolean>>({})
   const activityEndRef = useRef<HTMLDivElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -64,6 +68,19 @@ function App() {
       }, 100)
     }
   }, [chatMessages, showChat])
+
+  // Scientist names for random session titles
+  const scientistNames = [
+    'Einstein', 'Feynman', 'Curie', 'Turing', 'Tesla', 'Newton',
+    'Bohr', 'Hawking', 'Ramanujan', 'Darwin', 'Pasteur', 'Copernicus',
+    'Galileo', 'Maxwell', 'Planck', 'Heisenberg', 'Dirac', 'Oppenheimer',
+    'Schrödinger', 'Hubble', 'Watson', 'Crick', 'Mendel', 'Lavoisier',
+    'Faraday', 'Rutherford', 'Chadwick', 'Bose', 'Euler', 'Lagrange'
+  ]
+
+  const getRandomScientistName = () => {
+    return scientistNames[Math.floor(Math.random() * scientistNames.length)]
+  }
 
   const fetchSessions = async () => {
     const res = await fetch(`${API_URL}/sessions`)
@@ -143,17 +160,38 @@ function App() {
     }
   }
 
-  const createSession = async () => {
+  const createSession = async (folderPath?: string) => {
     const id = Date.now().toString()
-    const title = `Session ${sessions.length + 1}`
+    const title = getRandomScientistName()
     const res = await fetch(`${API_URL}/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, title })
+      body: JSON.stringify({ id, title, folder_path: folderPath || null })
     })
     const newSession = await res.json()
     setSessions([newSession, ...sessions])
     setCurrentSession(newSession)
+  }
+
+  const handleCreateSession = async () => {
+    await createSession(newSessionFolder)
+    setShowNewSessionModal(false)
+    setNewSessionFolder('')
+    setNewSessionFolderSuggestions([])
+  }
+
+  const searchSessionFolders = async (query: string) => {
+    if (!query || query.length < 2) {
+      setNewSessionFolderSuggestions([])
+      return
+    }
+    try {
+      const res = await fetch(`${API_URL}/folders/search?q=${encodeURIComponent(query)}`)
+      const data = await res.json()
+      setNewSessionFolderSuggestions(data)
+    } catch (err) {
+      console.error('Session folder search error:', err)
+    }
   }
 
   const deleteSession = async (id: string) => {
@@ -171,7 +209,7 @@ function App() {
     let session = currentSession
     if (!session) {
       const id = Date.now().toString()
-      const title = 'Default Session'
+      const title = getRandomScientistName()
       const res = await fetch(`${API_URL}/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -189,11 +227,11 @@ function App() {
       body: JSON.stringify({
         id,
         session_id: session.id,
-        title: newTaskDescription.substring(0, 30) + (newTaskDescription.length > 30 ? '...' : ''), // Use first 50 chars of description as title
+        title: newTaskDescription.substring(0, 30) + (newTaskDescription.length > 30 ? '...' : ''), // Use first 30 chars of description as title
         content: newTaskDescription,
         status: 'pending',
         priority: 'medium',
-        folder_path: newTaskFolder || null
+        folder_path: session.folder_path || newTaskFolder || null  // Use session's folder path, fallback to task folder
       })
     })
     const newTask = await res.json()
@@ -288,7 +326,7 @@ function App() {
       <aside className="left-sidebar glass">
         <div className="sidebar-header">
           <div className="logo">
-            <div className="logo-icon">✦</div>
+            <div className="logo-icon">🤖</div>
             <span>Scratchpad AI</span>
           </div>
         </div>
@@ -296,28 +334,71 @@ function App() {
         <div className="sessions-section">
           <div className="section-title">Sessions</div>
           <div className="sessions-list">
-            {sessions.map(session => (
-              <div
-                key={session.id}
-                className={`session-item ${currentSession?.id === session.id ? 'active' : ''}`}
-              >
-                <div onClick={() => setCurrentSession(session)}>
-                  <div className="session-icon">💬</div>
-                  <div className="session-info">
-                    <div className="session-title">{session.title}</div>
-                    <div className="session-date">{new Date(session.updated_at).toLocaleDateString()}</div>
+            {sessions.map(session => {
+              const sessionTasks = tasks.filter(task => task.session_id === session.id);
+              const isCollapsed = collapsedSessions[session.id] || false;
+
+              return (
+                <div key={session.id} className="session-with-tasks">
+                  <div
+                    className={`session-item ${currentSession?.id === session.id ? 'active' : ''}`}
+                    onClick={() => setCurrentSession(session)}
+                  >
+                    <div className="session-header">
+                      <div className="session-toggle" onClick={(e) => {
+                        e.stopPropagation();
+                        setCollapsedSessions(prev => ({
+                          ...prev,
+                          [session.id]: !prev[session.id]
+                        }));
+                      }}>
+                        {isCollapsed ? '▶' : '▼'}
+                      </div>
+                      <div className="session-icon">🔬</div>
+                      <div className="session-info">
+                        <div className="session-title">{session.title}</div>
+                        <div className="session-date">{new Date(session.updated_at).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                    <button className="delete-btn-small" onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSession(session.id)
+                    }}>×</button>
                   </div>
+
+                  {!isCollapsed && sessionTasks.length > 0 && (
+                    <div className="session-tasks-list">
+                      {sessionTasks.map(task => (
+                        <div
+                          key={task.id}
+                          className={`task-item ${selectedTask?.id === task.id ? 'active' : ''}`}
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setShowChat(true);
+                            setShowSidebar(true);
+                          }}
+                        >
+                          <div className="task-icon">⚙️</div>
+                          <div className="task-info">
+                            <div className="task-title">{task.title}</div>
+                            <div className={`task-status-badge status-${task.status}`}>
+                              {task.status === 'in_progress' ? '⚡' : task.status === 'completed' ? '✓' : task.status === 'failed' ? '✗' : '○'}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <button className="delete-btn-small" onClick={() => deleteSession(session.id)}>×</button>
-              </div>
-            ))}
+              )
+            })}
           </div>
-          <button className="new-session-btn glass-btn" onClick={createSession}>+ New Session</button>
+          <button className="new-session-btn glass-btn" onClick={() => setShowNewSessionModal(true)}>+ New Session</button>
         </div>
 
         <div className="profile-section">
           <div className="profile-card glass">
-            <div className="profile-avatar">U</div>
+            <div className="profile-avatar">👤</div>
             <div className="profile-info">
               <div className="profile-name">User</div>
               <div className="profile-status">Active</div>
@@ -572,35 +653,6 @@ function App() {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label>Folder Path (optional)</label>
-                <input
-                  type="text"
-                  placeholder="Start typing to search folders..."
-                  value={newTaskFolder}
-                  onChange={(e) => {
-                    setNewTaskFolder(e.target.value)
-                    searchFolders(e.target.value)
-                  }}
-                  className="form-input"
-                />
-                {folderSuggestions.length > 0 && (
-                  <div className="folder-suggestions">
-                    {folderSuggestions.map((folder, idx) => (
-                      <div
-                        key={idx}
-                        className="folder-suggestion-item"
-                        onClick={() => {
-                          setNewTaskFolder(folder)
-                          setFolderSuggestions([])
-                        }}
-                      >
-                        📁 {folder}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="form-group">
                 <label>Task Description</label>
                 <textarea
                   placeholder="Describe what you want the AI to do..."
@@ -614,6 +666,52 @@ function App() {
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setShowTaskModal(false)}>Cancel</button>
               <button className="btn-primary" onClick={handleCreateTask}>Create Task</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showNewSessionModal && (
+        <div className="modal-overlay" onClick={() => setShowNewSessionModal(false)}>
+          <div className="modal glass" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Create New Session</h2>
+              <button className="modal-close" onClick={() => setShowNewSessionModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Folder Path (optional)</label>
+                <input
+                  type="text"
+                  placeholder="Start typing to search folders..."
+                  value={newSessionFolder}
+                  onChange={(e) => {
+                    setNewSessionFolder(e.target.value)
+                    searchSessionFolders(e.target.value)
+                  }}
+                  className="form-input"
+                />
+                {newSessionFolderSuggestions.length > 0 && (
+                  <div className="folder-suggestions">
+                    {newSessionFolderSuggestions.map((folder, idx) => (
+                      <div
+                        key={idx}
+                        className="folder-suggestion-item"
+                        onClick={() => {
+                          setNewSessionFolder(folder)
+                          setNewSessionFolderSuggestions([])
+                        }}
+                      >
+                        📁 {folder}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowNewSessionModal(false)}>Cancel</button>
+              <button className="btn-primary" onClick={handleCreateSession}>Create Session</button>
             </div>
           </div>
         </div>
