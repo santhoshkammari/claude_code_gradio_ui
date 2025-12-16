@@ -340,6 +340,21 @@ function App() {
   const sendMessage = async () => {
     if (!chatInput.trim() || !selectedTask) return
 
+    // Check if user said "hi" (case insensitive) and respond with "sayi back"
+    if (chatInput.toLowerCase().trim() === 'hi') {
+      const userMessage = { role: 'user', content: chatInput }
+      setChatMessages(prev => [...prev, userMessage])
+
+      // Add the "sayi back" response after a short delay to simulate processing
+      setTimeout(() => {
+        const aiResponse = { role: 'assistant', content: 'sayi back' }
+        setChatMessages(prev => [...prev, aiResponse])
+      }, 300)
+
+      setChatInput('')
+      return
+    }
+
     const message = { role: 'user', content: chatInput }
     setChatMessages(prev => [...prev, message])
     setChatInput('')
