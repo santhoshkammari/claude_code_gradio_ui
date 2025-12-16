@@ -37,7 +37,7 @@ export default function TaskGrid({
   const filteredTasks = tasks.filter(task => taskFilter === 'all' || task.status === taskFilter)
 
   return (
-    <>
+    <div className="task-grid-container">
       <header className="main-header glass">
         <div className="header-title">Tasks</div>
         <div className="task-filters">
@@ -116,6 +116,6 @@ export default function TaskGrid({
           </div>
         ))}
       </div>
-    </>
+    </div>
   )
 }

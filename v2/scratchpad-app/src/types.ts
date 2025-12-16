@@ -1,6 +1,7 @@
 export interface Session {
   id: string
   title: string
+  folder_path?: string
   created_at: number
   updated_at: number
 }

@@ -1,3 +1,11 @@
+.task-grid-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 .main-header {
   padding: 12px 16px;
   border-radius: 8px;
@@ -5,6 +13,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .header-title {

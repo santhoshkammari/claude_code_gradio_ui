@@ -2,7 +2,7 @@ import './LeftSidebar.css'
 import '../shared/ThemeToggle.css'
 import type { Session, Task } from '../../types'
 import ThemeToggle from '../shared/ThemeToggle'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 const API_URL = 'http://localhost:3001/api'
 
@@ -16,7 +16,7 @@ interface LeftSidebarProps {
   onTaskClick: (task: Task) => void
   onDeleteSession: (id: string) => void
   onDeleteTask: (id: string) => void
-  onNewSession: () => void
+  onNewSession: (folderPath?: string) => void
   onToggleSession: (id: string) => void
 }
 
@@ -29,10 +29,17 @@ export default function LeftSidebar({
   onSessionClick,
   onTaskClick,
   onDeleteSession,
+  onDeleteTask,
   onNewSession,
   onToggleSession
 }: LeftSidebarProps) {
   const [openMenuTaskId, setOpenMenuTaskId] = useState<string | null>(null);
+  const [showNewSessionInput, setShowNewSessionInput] = useState(false);
+  const [newSessionPath, setNewSessionPath] = useState('');
+  const [folderSuggestions, setFolderSuggestions] = useState<string[]>([]);
+  const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const newSessionBtnRef = useRef<HTMLButtonElement>(null);
 
   const handleMenuToggle = (taskId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,6 +67,55 @@ export default function LeftSidebar({
     setOpenMenuTaskId(null);
   };
 
+  useEffect(() => {
+    if (showNewSessionInput && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [showNewSessionInput]);
+
+  const searchFolders = async (query: string) => {
+    if (!query || query.length < 2) {
+      setFolderSuggestions([]);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/folders/search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      // Filter out dot folders
+      const filtered = data.filter((path: string) => !path.split('/').some((part: string) => part.startsWith('.')));
+      setFolderSuggestions(filtered);
+    } catch (err) {
+      console.error('Folder search error:', err);
+    }
+  };
+
+  const handleNewSessionInputChange = (value: string) => {
+    setNewSessionPath(value);
+    searchFolders(value);
+  };
+
+  const handleCreateSession = (path?: string) => {
+    onNewSession(path || newSessionPath || undefined);
+    setShowNewSessionInput(false);
+    setNewSessionPath('');
+    setFolderSuggestions([]);
+  };
+
+  const handleNewSessionKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (folderSuggestions.length > 0) {
+        handleCreateSession(folderSuggestions[0]);
+      } else {
+        handleCreateSession();
+      }
+    } else if (e.key === 'Escape') {
+      setShowNewSessionInput(false);
+      setNewSessionPath('');
+      setFolderSuggestions([]);
+    }
+  };
+
   return (
     <aside className="left-sidebar">
       <div className="sidebar-header">
@@ -82,12 +138,18 @@ export default function LeftSidebar({
                 <div
                   className={`session-item ${currentSession?.id === session.id ? 'active' : ''}`}
                   onClick={() => onSessionClick(session)}
+                  onMouseEnter={() => setHoveredSessionId(session.id)}
+                  onMouseLeave={() => setHoveredSessionId(null)}
+                  title={session.folder_path || ''}
                 >
                   <div className="session-header">
                     <div className="session-icon">🔬</div>
                     <div className="session-info">
                       <div className="session-title">{session.title}</div>
                       <div className="session-date">{new Date(session.updated_at).toLocaleDateString()}</div>
+                      {session.folder_path && hoveredSessionId === session.id && (
+                        <div className="session-folder-tooltip">📁 {session.folder_path}</div>
+                      )}
                     </div>
                     <div className="session-toggle" onClick={(e) => {
                       e.stopPropagation();
@@ -142,7 +204,57 @@ export default function LeftSidebar({
             )
           })}
         </div>
-        <button className="new-session-btn" onClick={onNewSession}>+ New Session</button>
+
+        <div
+          className="new-session-container"
+          onMouseEnter={() => setShowNewSessionInput(true)}
+          onMouseLeave={() => {
+            if (!newSessionPath && folderSuggestions.length === 0) {
+              setShowNewSessionInput(false);
+            }
+          }}
+        >
+          {showNewSessionInput && (
+            <div className="new-session-input-wrapper">
+              {folderSuggestions.length > 0 && (
+                <div className="folder-suggestions">
+                  {folderSuggestions.slice(0, 5).map((path, idx) => (
+                    <div
+                      key={idx}
+                      className="folder-suggestion-item"
+                      onClick={() => handleCreateSession(path)}
+                    >
+                      📁 {path}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input
+                ref={inputRef}
+                type="text"
+                className="new-session-input"
+                placeholder="Enter folder path..."
+                value={newSessionPath}
+                onChange={(e) => handleNewSessionInputChange(e.target.value)}
+                onKeyDown={handleNewSessionKeyDown}
+                onBlur={() => {
+                  setTimeout(() => {
+                    setShowNewSessionInput(false);
+                    setNewSessionPath('');
+                    setFolderSuggestions([]);
+                  }, 200);
+                }}
+              />
+            </div>
+          )}
+
+          <button
+            ref={newSessionBtnRef}
+            className="new-session-btn"
+          >
+            + New Session
+          </button>
+        </div>
       </div>
 
       <div className="profile-section">

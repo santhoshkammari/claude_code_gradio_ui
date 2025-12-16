@@ -5,6 +5,7 @@ import LeftSidebar from './components/LeftSidebar/LeftSidebar'
 import RightSidebar from './components/RightSidebar/RightSidebar'
 import TaskGrid from './components/TaskGrid/TaskGrid'
 import ChatView from './components/ChatView/ChatView'
+import MainChatView from './components/MainChatView/MainChatView'
 import NewTaskModal from './components/Modals/NewTaskModal'
 import NewSessionModal from './components/Modals/NewSessionModal'
 import type { Session, Task, FileChange } from './types'
@@ -206,7 +207,7 @@ function App() {
     const res = await fetch(`${API_URL}/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, title, folder_path: folderPath || null })
+      body: JSON.stringify({ id, title, folder_path: folderPath || undefined })
     })
     const newSession = await res.json()
     setSessions([newSession, ...sessions])
@@ -284,12 +285,6 @@ function App() {
     setNewTaskFolder('')
   }
 
-  const handleTaskClick = (task: Task) => {
-    setSelectedTask(task)
-    setShowChat(true)
-    setShowSidebar(true)
-  }
-
   const handleBackToTasks = () => {
     setShowChat(false)
     setSelectedTask(null)
@@ -300,18 +295,6 @@ function App() {
     if (!selectedTask) return
     try {
       await fetch(`${API_URL}/tasks/${selectedTask.id}/execute`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model })
-      })
-    } catch (err) {
-      console.error('Failed to start task:', err)
-    }
-  }
-
-  const startTaskFromCard = async (taskId: string, model: string) => {
-    try {
-      await fetch(`${API_URL}/tasks/${taskId}/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model })
@@ -352,6 +335,57 @@ function App() {
     }
   }
 
+  const handleMainChatSubmit = async (message: string, config: any) => {
+    let session = currentSession
+    if (!session) {
+      const id = Date.now().toString()
+      const title = getRandomScientistName()
+      const res = await fetch(`${API_URL}/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, title })
+      })
+      const newSession = await res.json()
+      setSessions([newSession])
+      setCurrentSession(newSession)
+      session = newSession
+    }
+
+    if (!session) return
+
+    const id = Date.now().toString()
+    const res = await fetch(`${API_URL}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        session_id: session.id,
+        title: message.substring(0, 30) + (message.length > 30 ? '...' : ''),
+        content: message,
+        status: 'pending',
+        priority: 'medium',
+        model: config.model,
+        agent: config.agent,
+        tools: config.tools
+      })
+    })
+    const newTask = await res.json()
+    setTasks([newTask, ...tasks])
+    setSelectedTask(newTask)
+    setShowChat(true)
+    setShowSidebar(true)
+
+    try {
+      await fetch(`${API_URL}/tasks/${newTask.id}/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: config.model })
+      })
+    } catch (err) {
+      console.error('Failed to start task:', err)
+    }
+  }
+
   const deleteTask = async (id: string) => {
     await fetch(`${API_URL}/tasks/${id}`, { method: 'DELETE' })
     const updated = tasks.filter(t => t.id !== id)
@@ -364,12 +398,6 @@ function App() {
       setFileChanges([])
       setGitDiff('')
     }
-  }
-
-  const updateTaskModel = (taskId: string, model: string) => {
-    setTasks(prev => prev.map(t =>
-      t.id === taskId ? { ...t, model: model } : t
-    ));
   }
 
   return (
@@ -388,7 +416,7 @@ function App() {
         }}
         onDeleteSession={deleteSession}
         onDeleteTask={deleteTask}
-        onNewSession={() => setShowNewSessionModal(true)}
+        onNewSession={createSession}
         onToggleSession={(id) => {
           setCollapsedSessions(prev => ({
             ...prev,
@@ -399,18 +427,39 @@ function App() {
 
       <main className="main-content">
         {!showChat ? (
-          <TaskGrid
-            tasks={tasks}
-            selectedTask={selectedTask}
-            taskFilter={taskFilter}
-            onTaskClick={handleTaskClick}
-            onDeleteTask={deleteTask}
-            onStartTask={startTaskFromCard}
-            onUpdateTaskModel={updateTaskModel}
-            onNewTask={() => setShowTaskModal(true)}
-            onFilterChange={setTaskFilter}
-            API_URL={API_URL}
-          />
+          <div className="main-with-overlay">
+            <TaskGrid
+              tasks={tasks}
+              selectedTask={selectedTask}
+              taskFilter={taskFilter}
+              onTaskClick={(task) => {
+                setSelectedTask(task);
+                setShowChat(true);
+                setShowSidebar(true);
+              }}
+              onDeleteTask={deleteTask}
+              onStartTask={async (taskId: string, model: string) => {
+                try {
+                  await fetch(`${API_URL}/tasks/${taskId}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model })
+                  })
+                } catch (err) {
+                  console.error('Failed to start task:', err)
+                }
+              }}
+              onUpdateTaskModel={(taskId: string, model: string) => {
+                setTasks(prev => prev.map(t =>
+                  t.id === taskId ? { ...t, model: model } : t
+                ));
+              }}
+              onNewTask={() => setShowTaskModal(true)}
+              onFilterChange={setTaskFilter}
+              API_URL={API_URL}
+            />
+            <MainChatView onSubmitMessage={handleMainChatSubmit} />
+          </div>
         ) : (
           <ChatView
             selectedTask={selectedTask}

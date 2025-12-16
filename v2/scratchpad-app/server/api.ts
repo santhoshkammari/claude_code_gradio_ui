@@ -20,6 +20,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
+    folder_path TEXT,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   );
@@ -51,7 +52,7 @@ db.exec(`
 const sessionStmts = {
   getAll: db.prepare('SELECT * FROM sessions ORDER BY updated_at DESC'),
   getById: db.prepare('SELECT * FROM sessions WHERE id = ?'),
-  create: db.prepare('INSERT INTO sessions (id, title, created_at, updated_at) VALUES (?, ?, ?, ?)'),
+  create: db.prepare('INSERT INTO sessions (id, title, folder_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'),
   update: db.prepare('UPDATE sessions SET title = ?, updated_at = ? WHERE id = ?'),
   delete: db.prepare('DELETE FROM sessions WHERE id = ?')
 }
@@ -96,10 +97,10 @@ app.get('/api/sessions', (req, res) => {
 })
 
 app.post('/api/sessions', (req, res) => {
-  const { id, title } = req.body
+  const { id, title, folder_path } = req.body
   const now = Date.now()
-  sessionStmts.create.run(id, title, now, now)
-  res.json({ id, title, created_at: now, updated_at: now })
+  sessionStmts.create.run(id, title, folder_path || null, now, now)
+  res.json({ id, title, folder_path, created_at: now, updated_at: now })
 })
 
 app.delete('/api/sessions/:id', (req, res) => {
@@ -374,6 +375,25 @@ app.get('/api/folders/search', async (req, res) => {
   }
 
   try {
+    // Use ripgrep to find directories matching the query
+    const { stdout } = await execAsync(
+      `rg --files --null ${basePath} 2>/dev/null | xargs -0 -n1 dirname | sort -u | grep -i "${query}" | head -20`,
+      { maxBuffer: 1024 * 1024 * 10 }
+    ).catch(() => ({ stdout: '' }))
+
+    if (stdout) {
+      const folders = stdout
+        .trim()
+        .split('\n')
+        .filter(p => p && !p.split('/').some(part => part.startsWith('.')))
+        .map(p => path.relative(basePath, p))
+        .filter(p => p && p !== '.')
+        .slice(0, 20)
+
+      return res.json(folders)
+    }
+
+    // Fallback: simple directory search
     const folders: string[] = []
     const searchRecursive = async (dir: string, depth: number = 0) => {
       if (depth > 3) return
