@@ -437,7 +437,12 @@ function App() {
                   </div>
                   {task.content && <div className="task-content">{truncateText(task.content)}</div>}
                   {task.folder_path && <div className="task-folder">📁 {task.folder_path}</div>}
-                  {task.model && <div className="task-model-badge">Agent: {task.model}</div>}
+                  {task.model && (
+                    <div className="task-model-badge">
+                      <span className="model-label">Agent:</span>
+                      <span className="model-name">{task.model}</span>
+                    </div>
+                  )}
                   <div className="task-footer">
                     <div className="task-date">{new Date(task.created_at).toLocaleDateString()}</div>
                     <div className="task-footer-actions">
@@ -446,14 +451,36 @@ function App() {
                         <div className="unified-start-btn-wrapper">
                           <button
                             className="unified-start-btn"
-                            onClick={(e) => { e.stopPropagation(); startTaskFromCard(task.id, 'sonnet'); }}
+                            onClick={(e) => { e.stopPropagation(); startTaskFromCard(task.id, task.model || 'sonnet'); }}
                           >
                             <span className="start-text">Start</span>
                             <span className="start-divider"></span>
                             <select
                               className="start-dropdown-trigger"
                               onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => { e.stopPropagation(); if(e.target.value) startTaskFromCard(task.id, e.target.value); }}
+                              onChange={async (e) => {
+                                e.stopPropagation();
+                                if(e.target.value) {
+                                  // Update task model in the database
+                                  try {
+                                    await fetch(`${API_URL}/tasks/${task.id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ model: e.target.value })
+                                    });
+
+                                    // Update local state
+                                    setTasks(prev => prev.map(t =>
+                                      t.id === task.id ? { ...t, model: e.target.value } : t
+                                    ));
+                                  } catch (err) {
+                                    console.error('Failed to update task model:', err);
+                                  }
+
+                                  // Optionally start the task too, or just update the model
+                                  startTaskFromCard(task.id, e.target.value);
+                                }
+                              }}
                             >
                               <option value="">▼</option>
                               <option value="sonnet">Sonnet</option>

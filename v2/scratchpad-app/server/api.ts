@@ -125,6 +125,34 @@ app.delete('/api/tasks/:id', (req, res) => {
   res.json({ success: true })
 })
 
+app.put('/api/tasks/:id', (req, res) => {
+  const { id } = req.params
+  const { model } = req.body
+  const now = Date.now()
+
+  // Only update model for now, but could extend to other fields
+  const task = taskStmts.getById.get(id)
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' })
+  }
+
+  // Update only the model field and updated_at timestamp
+  db.prepare('UPDATE tasks SET model = ?, updated_at = ? WHERE id = ?').run(model, now, id)
+
+  res.json({
+    id: task.id,
+    session_id: task.session_id,
+    title: task.title,
+    content: task.content,
+    status: task.status,
+    priority: task.priority,
+    model: model,
+    folder_path: task.folder_path,
+    created_at: task.created_at,
+    updated_at: now
+  })
+})
+
 app.get('/api/tasks/:taskId/stream', (req, res) => {
   const { taskId } = req.params
 
