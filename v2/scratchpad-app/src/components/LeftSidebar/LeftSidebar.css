@@ -1,16 +1,15 @@
 .left-sidebar {
   width: 260px;
-  padding: 8px;
+  padding: 12px 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   z-index: 10;
   height: 100vh;
   overflow: hidden;
   scrollbar-width: none;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  border-right: 1px solid var(--glass-border);
+  background: #171717;
+  border-right: none;
 }
 
 .left-sidebar::-webkit-scrollbar {
@@ -23,8 +22,11 @@
 }
 
 .sidebar-header {
-  padding: 6px;
+  padding: 6px 12px;
   border-radius: 6px;
+  border: none;
+  background: #171717;
+  margin-bottom: 8px;
 }
 
 .logo {
@@ -33,19 +35,20 @@
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #e0e0e0; /* Using light gray to maintain contrast on dark background */
 }
 
 .logo-icon {
   width: 24px;
   height: 24px;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: #262626;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #008FE5; /* Using accent color for contrast */
   font-size: 12px;
+  border: none;
 }
 
 .sessions-section {
@@ -54,16 +57,18 @@
   flex-direction: column;
   gap: 12px;
   overflow: hidden;
+  background: #171717;
 }
 
 .section-title {
   font-size: 11px;
   font-weight: 700;
-  color: var(--text-tertiary);
+  color: #909090; /* Using text-tertiary equivalent */
   text-transform: uppercase;
   letter-spacing: 1px;
-  padding: 0 12px 8px;
+  padding: 0 16px 8px;
   margin-bottom: 4px;
+  background: #171717;
 }
 
 .sessions-list {
@@ -73,6 +78,7 @@
   flex-direction: column;
   gap: 8px;
   scrollbar-width: none;
+  background: #171717;
 }
 
 .sessions-list::-webkit-scrollbar {
@@ -88,22 +94,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
-  border-radius: 6px;
+  padding: 12px 14px;
+  border-radius: 10px;
   transition: all 0.2s ease;
-  background: transparent;
+  background: #171717;
   border: 1px solid transparent;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .session-item:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--border-color);
+  background: #262626; /* Using bg-tertiary equivalent for hover */
+  border-color: #333333;
 }
 
 .session-item.active {
-  background: var(--bg-tertiary);
-  border-color: var(--accent-primary);
+  background: #262626; /* Using bg-tertiary equivalent for active */
+  border-color: #008FE5;
 }
 
 .session-item > div {
@@ -118,9 +124,9 @@
   width: 18px;
   height: 18px;
   border-radius: 4px;
-  border: 1px solid var(--border-color);
+  border: none;
   background: transparent;
-  color: var(--danger);
+  color: #ef4444; /* danger color */
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
@@ -133,12 +139,13 @@
 }
 
 .delete-btn-small:hover {
-  background: var(--danger);
+  background: #ef4444;
   color: white;
 }
 
 .session-with-tasks {
   margin-bottom: 8px;
+  background: #171717;
 }
 
 .session-header {
@@ -152,10 +159,11 @@
   cursor: pointer;
   padding: 4px;
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: #909090; /* Using text-tertiary equivalent */
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: auto;
 }
 
 .session-icon {
@@ -170,7 +178,7 @@
 .session-title {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: #e0e0e0; /* Using text-primary equivalent */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -178,7 +186,7 @@
 
 .session-date {
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: #909090; /* Using text-tertiary equivalent */
 }
 
 .session-tasks-list {
@@ -186,31 +194,33 @@
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  background: #171717;
 }
 
 .task-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  border-radius: 4px;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: 3px;
-  background: transparent;
+  margin-bottom: 6px;
+  background: #171717;
   border: 1px solid transparent;
-  min-height: 32px;
+  min-height: 40px;
   box-sizing: border-box;
+  position: relative;
 }
 
 .task-item:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--border-color);
+  background: #262626; /* Using bg-tertiary equivalent for hover */
+  border-color: #333333;
 }
 
 .task-item.active {
-  background: var(--bg-tertiary);
-  border-color: var(--accent-primary);
+  background: #262626; /* Using bg-tertiary equivalent for active */
+  border-color: #008FE5;
 }
 
 .task-icon {
@@ -233,7 +243,7 @@
 
 .task-title {
   font-size: 12px;
-  color: var(--text-primary);
+  color: #e0e0e0; /* Using text-primary equivalent */
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -241,57 +251,90 @@
   max-width: calc(100% - 20px);
 }
 
-.task-status-badge {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+.task-menu-icon {
+  font-size: 18px;
+  color: #909090; /* text-tertiary equivalent */
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  flex-shrink: 0;
 }
 
-.task-status-badge.status-pending {
-  background: transparent;
-  color: var(--warning);
-  border: 1px solid var(--border-color);
+.task-menu-icon:hover {
+  background: #262626; /* bg-tertiary equivalent */
+  color: #e0e0e0;
 }
 
-.task-status-badge.status-in_progress {
-  background: transparent;
-  color: var(--accent-primary);
-  border: 1px solid var(--border-color);
-  animation: pulse 2s infinite;
+.task-dropdown-menu {
+  position: absolute;
+  right: 10px;
+  top: 100%;
+  background: #262626;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  min-width: 140px;
+  z-index: 100;
+  margin-top: 6px;
 }
 
-.task-status-badge.status-completed {
-  background: transparent;
-  color: var(--success);
-  border: 1px solid var(--border-color);
+.dropdown-item {
+  width: 100%;
+  padding: 10px 12px;
+  background: #262626;
+  border: none;
+  text-align: left;
+  color: #e0e0e0;
+  cursor: pointer;
+  font-size: 13px;
+  display: block;
+  border-bottom: 1px solid #333333;
 }
 
-.task-status-badge.status-failed {
-  background: transparent;
-  color: var(--danger);
-  border: 1px solid var(--border-color);
+.dropdown-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 8px 8px;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+.dropdown-item:first-child {
+  border-radius: 8px 8px 0 0;
 }
+
+.dropdown-item:hover {
+  background: #333333;
+  color: #008FE5;
+}
+
+.task-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.task-title {
+  font-size: 12px;
+  color: #e0e0e0; /* Using text-primary equivalent */
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 20px);
+}
+
 
 .new-session-btn {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: transparent;
-  color: var(--accent-primary);
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background: #171717;
+  color: #008FE5; /* accent-primary equivalent */
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -300,49 +343,57 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  border: 1px solid #333333;
+  margin-top: 8px;
 }
 
 .new-session-btn:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--accent-primary);
+  background: #262626; /* bg-tertiary equivalent */
 }
 
 .profile-section {
   margin-top: auto;
+  background: #171717;
 }
 
 .profile-card {
-  padding: 10px;
-  border-radius: 8px;
+  padding: 14px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
+  background: #171717;
+  border: 1px solid #333333;
 }
 
 .profile-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #262626;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #008FE5; /* Using accent color */
   font-weight: 600;
-  font-size: 12px;
+  font-size: 16px;
+  border: none;
 }
 
 .profile-info {
   flex: 1;
+  background: #171717;
 }
 
 .profile-name {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: #e0e0e0; /* text-primary equivalent */
+  background: #171717;
 }
 
 .profile-status {
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: #909090; /* text-tertiary equivalent */
+  background: #171717;
 }

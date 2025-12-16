@@ -387,6 +387,7 @@ function App() {
           setShowSidebar(true);
         }}
         onDeleteSession={deleteSession}
+        onDeleteTask={deleteTask}
         onNewSession={() => setShowNewSessionModal(true)}
         onToggleSession={(id) => {
           setCollapsedSessions(prev => ({
