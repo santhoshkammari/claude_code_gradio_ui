@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
+import './components/shared/common.css'
+import LeftSidebar from './components/LeftSidebar/LeftSidebar'
+import RightSidebar from './components/RightSidebar/RightSidebar'
+import TaskGrid from './components/TaskGrid/TaskGrid'
+import ChatView from './components/ChatView/ChatView'
+import NewTaskModal from './components/Modals/NewTaskModal'
+import NewSessionModal from './components/Modals/NewSessionModal'
 import type { Session, Task, FileChange } from './types'
 
 const API_URL = 'http://localhost:3001/api'
@@ -18,7 +25,6 @@ function App() {
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [newTaskDescription, setNewTaskDescription] = useState('')
   const [newTaskFolder, setNewTaskFolder] = useState('')
-  const [folderSuggestions, setFolderSuggestions] = useState<string[]>([])
   const [showNewSessionModal, setShowNewSessionModal] = useState(false)
   const [newSessionFolder, setNewSessionFolder] = useState('')
   const [newSessionFolderSuggestions, setNewSessionFolderSuggestions] = useState<string[]>([])
@@ -69,7 +75,6 @@ function App() {
     }
   }, [chatMessages, showChat])
 
-  // Scientist names for random session titles
   const scientistNames = [
     'Einstein', 'Feynman', 'Curie', 'Turing', 'Tesla', 'Newton',
     'Bohr', 'Hawking', 'Ramanujan', 'Darwin', 'Pasteur', 'Copernicus',
@@ -108,46 +113,27 @@ function App() {
     }
   }
 
-  const searchFolders = async (query: string) => {
-    if (!query || query.length < 2) {
-      setFolderSuggestions([])
-      return
-    }
+  const parseStreamJsonMessage = (data: any) => {
     try {
-      const res = await fetch(`${API_URL}/folders/search?q=${encodeURIComponent(query)}`)
-      const data = await res.json()
-      setFolderSuggestions(data)
-    } catch (err) {
-      console.error('Folder search error:', err)
-    }
-  }
-
-  const parseStreamJsonMessage = (data: any, taskId: string) => {
-    try {
-      // Determine if this is a Qwen stream-json message
       if (data.type && (data.type === 'system' || data.type === 'assistant' || data.type === 'result')) {
-        // Handle Qwen stream-json format
         switch (data.type) {
           case 'system':
             if (data.subtype === 'init') {
-              // This is an initialization message, we can ignore it for chat display
               return { type: 'system_init', role: 'system', content: 'Qwen initialized' };
             }
             break;
           case 'assistant':
             if (data.message?.content) {
-              // Extract text content from assistant message
               const textContent = data.message.content
                 .filter((item: any) => item?.type === 'text')
                 .map((item: any) => item?.text)
-                .filter(Boolean) // Remove undefined/null values
+                .filter(Boolean)
                 .join(' ');
 
               if (textContent) {
                 return { type: 'message', role: 'assistant', content: textContent };
               }
 
-              // Check if there are tool_use messages
               const toolContent = data.message.content
                 .filter((item: any) => item?.type === 'tool_use')
                 .map((item: any) => `Using tool: ${item?.name || 'unknown'} with input: ${JSON.stringify(item?.input || {})}`)
@@ -159,7 +145,6 @@ function App() {
             }
             break;
           case 'result':
-            // Handle result message
             const resultContent = data.result || `Task completed with ${data.num_turns || 0} turns`;
             return { type: 'message', role: 'assistant', content: resultContent };
         }
@@ -168,8 +153,6 @@ function App() {
       console.error('Error parsing stream-json message:', parseError);
       console.error('Problematic data:', data);
     }
-
-    // If it's not a stream-json message or parsing failed, return the original data
     return data;
   };
 
@@ -188,10 +171,9 @@ function App() {
     eventSource.onmessage = (event) => {
       try {
         const raw_data = JSON.parse(event.data);
-        const data = parseStreamJsonMessage(raw_data, taskId);
+        const data = parseStreamJsonMessage(raw_data);
         setActivityLog(prev => [...prev, data])
 
-        // Only add messages to chat that are of type 'message' and not system_init
         if (data.type === 'message' && data.role !== 'system') {
           setChatMessages(prev => [...prev, data])
         }
@@ -208,7 +190,6 @@ function App() {
         }
       } catch (error) {
         console.error('Error parsing stream data:', error);
-        // Log the raw event data for debugging
         console.error('Raw event data:', event.data);
       }
     }
@@ -274,10 +255,13 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, title })
       })
-      session = await res.json()
-      setSessions([session])
-      setCurrentSession(session)
+      const newSession = await res.json()
+      setSessions([newSession])
+      setCurrentSession(newSession)
+      session = newSession
     }
+
+    if (!session) return;
 
     const id = Date.now().toString()
     const res = await fetch(`${API_URL}/tasks`, {
@@ -286,11 +270,11 @@ function App() {
       body: JSON.stringify({
         id,
         session_id: session.id,
-        title: newTaskDescription.substring(0, 30) + (newTaskDescription.length > 30 ? '...' : ''), // Use first 30 chars of description as title
+        title: newTaskDescription.substring(0, 30) + (newTaskDescription.length > 30 ? '...' : ''),
         content: newTaskDescription,
         status: 'pending',
         priority: 'medium',
-        folder_path: session.folder_path || newTaskFolder || null  // Use session's folder path, fallback to task folder
+        folder_path: newTaskFolder || null
       })
     })
     const newTask = await res.json()
@@ -340,12 +324,10 @@ function App() {
   const sendMessage = async () => {
     if (!chatInput.trim() || !selectedTask) return
 
-    // Check if user said "hi" (case insensitive) and respond with "sayi back"
     if (chatInput.toLowerCase().trim() === 'hi') {
       const userMessage = { role: 'user', content: chatInput }
       setChatMessages(prev => [...prev, userMessage])
 
-      // Add the "sayi back" response after a short delay to simulate processing
       setTimeout(() => {
         const aiResponse = { role: 'assistant', content: 'sayi back' }
         setChatMessages(prev => [...prev, aiResponse])
@@ -384,439 +366,98 @@ function App() {
     }
   }
 
-  const filteredTasks = tasks.filter(task => taskFilter === 'all' || task.status === taskFilter)
-
-  // Helper function to truncate text to 2 lines max
-  const truncateText = (text: string, maxLength: number = 120) => {
-    if (!text) return '';
-    if (text.length <= maxLength) {
-      return text;
-    }
-    return text.substring(0, maxLength) + '...';
-  };
+  const updateTaskModel = (taskId: string, model: string) => {
+    setTasks(prev => prev.map(t =>
+      t.id === taskId ? { ...t, model: model } : t
+    ));
+  }
 
   return (
     <div className={`app ${showSidebar ? 'sidebar-visible' : 'sidebar-hidden'}`}>
-      <aside className="left-sidebar glass">
-        <div className="sidebar-header">
-          <div className="logo">
-            <div className="logo-icon">🤖</div>
-            <span>Scratchpad AI</span>
-          </div>
-        </div>
-
-        <div className="sessions-section">
-          <div className="section-title">Sessions</div>
-          <div className="sessions-list">
-            {sessions.map(session => {
-              const sessionTasks = tasks.filter(task => task.session_id === session.id);
-              const isCollapsed = collapsedSessions[session.id] || false;
-
-              return (
-                <div key={session.id} className="session-with-tasks">
-                  <div
-                    className={`session-item ${currentSession?.id === session.id ? 'active' : ''}`}
-                    onClick={() => setCurrentSession(session)}
-                  >
-                    <div className="session-header">
-                      <div className="session-toggle" onClick={(e) => {
-                        e.stopPropagation();
-                        setCollapsedSessions(prev => ({
-                          ...prev,
-                          [session.id]: !prev[session.id]
-                        }));
-                      }}>
-                        {isCollapsed ? '▶' : '▼'}
-                      </div>
-                      <div className="session-icon">🔬</div>
-                      <div className="session-info">
-                        <div className="session-title">{session.title}</div>
-                        <div className="session-date">{new Date(session.updated_at).toLocaleDateString()}</div>
-                      </div>
-                    </div>
-                    <button className="delete-btn-small" onClick={(e) => {
-                      e.stopPropagation();
-                      deleteSession(session.id)
-                    }}>×</button>
-                  </div>
-
-                  {!isCollapsed && sessionTasks.length > 0 && (
-                    <div className="session-tasks-list">
-                      {sessionTasks.map(task => (
-                        <div
-                          key={task.id}
-                          className={`task-item ${selectedTask?.id === task.id ? 'active' : ''}`}
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setShowChat(true);
-                            setShowSidebar(true);
-                          }}
-                        >
-                          <div className="task-icon">⚙️</div>
-                          <div className="task-info">
-                            <div className="task-title">{task.title}</div>
-                            <div className={`task-status-badge status-${task.status}`}>
-                              {task.status === 'in_progress' ? '⚡' : task.status === 'completed' ? '✓' : task.status === 'failed' ? '✗' : '○'}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-          <button className="new-session-btn glass-btn" onClick={() => setShowNewSessionModal(true)}>+ New Session</button>
-        </div>
-
-        <div className="profile-section">
-          <div className="profile-card glass">
-            <div className="profile-avatar">👤</div>
-            <div className="profile-info">
-              <div className="profile-name">User</div>
-              <div className="profile-status">Active</div>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <LeftSidebar
+        sessions={sessions}
+        currentSession={currentSession}
+        tasks={tasks}
+        selectedTask={selectedTask}
+        collapsedSessions={collapsedSessions}
+        onSessionClick={setCurrentSession}
+        onTaskClick={(task) => {
+          setSelectedTask(task);
+          setShowChat(true);
+          setShowSidebar(true);
+        }}
+        onDeleteSession={deleteSession}
+        onNewSession={() => setShowNewSessionModal(true)}
+        onToggleSession={(id) => {
+          setCollapsedSessions(prev => ({
+            ...prev,
+            [id]: !prev[id]
+          }));
+        }}
+      />
 
       <main className="main-content">
         {!showChat ? (
-          <>
-            <header className="main-header glass">
-              <div className="header-title">Tasks</div>
-              <div className="task-filters">
-                <button className={`filter-btn ${taskFilter === 'all' ? 'active' : ''}`} onClick={() => setTaskFilter('all')}>All</button>
-                <button className={`filter-btn ${taskFilter === 'pending' ? 'active' : ''}`} onClick={() => setTaskFilter('pending')}>Pending</button>
-                <button className={`filter-btn ${taskFilter === 'in_progress' ? 'active' : ''}`} onClick={() => setTaskFilter('in_progress')}>Running</button>
-                <button className={`filter-btn ${taskFilter === 'completed' ? 'active' : ''}`} onClick={() => setTaskFilter('completed')}>Completed</button>
-              </div>
-              <button className="new-task-btn" onClick={() => setShowTaskModal(true)}>+ New Task</button>
-            </header>
-
-            <div className="tasks-grid">
-              {filteredTasks.map(task => (
-                <div
-                  key={task.id}
-                  className={`task-card glass ${selectedTask?.id === task.id ? 'selected' : ''}`}
-                  onClick={() => handleTaskClick(task)}
-                >
-                  <div className="task-header">
-                    <div className="task-priority" data-priority={task.priority}></div>
-                    <div className="task-title">{task.title}</div>
-                    <div className={`task-status-badge status-${task.status}`}>
-                      {task.status === 'in_progress' ? '⚡' : task.status === 'completed' ? '✓' : task.status === 'failed' ? '✗' : '○'}
-                    </div>
-                  </div>
-                  {task.content && <div className="task-content">{truncateText(task.content)}</div>}
-                  {task.folder_path && <div className="task-folder">📁 {task.folder_path}</div>}
-                  {task.model && (
-                    <div className="task-model-badge">
-                      <span className="model-label">Agent:</span>
-                      <span className="model-name">{task.model}</span>
-                    </div>
-                  )}
-                  <div className="task-footer">
-                    <div className="task-date">{new Date(task.created_at).toLocaleDateString()}</div>
-                    <div className="task-footer-actions">
-                      <button className="task-delete-btn" onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }}>Delete</button>
-                      {task.status === 'pending' && (
-                        <div className="unified-start-btn-wrapper">
-                          <button
-                            className="unified-start-btn"
-                            onClick={(e) => { e.stopPropagation(); startTaskFromCard(task.id, task.model || 'sonnet'); }}
-                          >
-                            <span className="start-text">Start</span>
-                            <span className="start-divider"></span>
-                            <select
-                              className="start-dropdown-trigger"
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={async (e) => {
-                                e.stopPropagation();
-                                if(e.target.value) {
-                                  // Update task model in the database
-                                  try {
-                                    await fetch(`${API_URL}/tasks/${task.id}`, {
-                                      method: 'PUT',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ model: e.target.value })
-                                    });
-
-                                    // Update local state
-                                    setTasks(prev => prev.map(t =>
-                                      t.id === task.id ? { ...t, model: e.target.value } : t
-                                    ));
-                                  } catch (err) {
-                                    console.error('Failed to update task model:', err);
-                                  }
-
-                                  // Optionally start the task too, or just update the model
-                                  startTaskFromCard(task.id, e.target.value);
-                                }
-                              }}
-                            >
-                              <option value="">▼</option>
-                              <option value="sonnet">Sonnet</option>
-                              <option value="haiku">Haiku</option>
-                              <option value="qwen">Qwen</option>
-                            </select>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
+          <TaskGrid
+            tasks={tasks}
+            selectedTask={selectedTask}
+            taskFilter={taskFilter}
+            onTaskClick={handleTaskClick}
+            onDeleteTask={deleteTask}
+            onStartTask={startTaskFromCard}
+            onUpdateTaskModel={updateTaskModel}
+            onNewTask={() => setShowTaskModal(true)}
+            onFilterChange={setTaskFilter}
+            API_URL={API_URL}
+          />
         ) : (
-          <>
-            <div className="chat-header glass">
-              <div className="chat-header-left">
-                <button className="back-btn" onClick={handleBackToTasks}>←</button>
-                <div className="chat-header-info">
-                  <div className="chat-header-title">{selectedTask?.title}</div>
-                  <div className="chat-header-status">
-                    <span className={`status-indicator status-${selectedTask?.status}`}></span>
-                    {selectedTask?.status}
-                  </div>
-                </div>
-              </div>
-              {selectedTask?.folder_path && (
-                <div className="chat-header-folder">📁 {selectedTask.folder_path}</div>
-              )}
-            </div>
-
-            <div className="chat-container">
-              <div className="chat-messages">
-                {chatMessages.map((msg, idx) => (
-                  <div key={idx} className={`chat-message ${msg.role}`}>
-                    <div className="message-avatar">{msg.role === 'assistant' ? '🤖' : '👤'}</div>
-                    <div className="message-bubble">
-                      <div className="message-content">{msg.content}</div>
-                    </div>
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-
-              <div className="chat-input-wrapper">
-                <div className="input-field-wrapper">
-                  <textarea
-                    className="message-input-field"
-                    placeholder="Message..."
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault()
-                        sendMessage()
-                      }
-                    }}
-                    rows={1}
-                  />
-                  <div className="input-controls-bottom">
-                    <div className="model-selector-wrapper">
-                      <button className="model-selector-btn" onClick={() => {}}>
-                        <span className="model-avatar">AI</span>
-                        <span className="model-text">{selectedModel === 'sonnet' ? 'Sonnet 4.5' : selectedModel === 'haiku' ? 'Haiku' : 'Qwen'}</span>
-                        <span className="model-arrow">▼</span>
-                      </button>
-                      <select
-                        className="hidden-model-select"
-                        value={selectedModel}
-                        onChange={(e) => setSelectedModel(e.target.value)}
-                      >
-                        <option value="sonnet">Sonnet 4.5</option>
-                        <option value="haiku">Haiku</option>
-                        <option value="qwen">Qwen</option>
-                      </select>
-                    </div>
-
-                    <div className="action-buttons-row">
-                      <div className="reason-badge-display">
-                        <span className="reason-text">REASON</span>
-                        <span className="reason-number">2</span>
-                      </div>
-                      <button className="action-icon-btn export-btn" title="Export" onClick={() => {}}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                          <polyline points="7 10 12 15 17 10"></polyline>
-                          <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                      </button>
-                      <button className="action-icon-btn send-btn-icon" onClick={() => sendMessage()} title="Send">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="22" y1="2" x2="11" y2="13"></line>
-                          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedTask?.status === 'pending' && (
-                  <button className="start-task-btn" onClick={() => startTask(selectedModel)}>
-                    ▶ Start Task
-                  </button>
-                )}
-              </div>
-            </div>
-          </>
+          <ChatView
+            selectedTask={selectedTask}
+            chatMessages={chatMessages}
+            chatInput={chatInput}
+            selectedModel={selectedModel}
+            onBackToTasks={handleBackToTasks}
+            onChatInputChange={setChatInput}
+            onSendMessage={sendMessage}
+            onModelChange={setSelectedModel}
+            onStartTask={startTask}
+            chatEndRef={chatEndRef}
+          />
         )}
       </main>
 
-      <aside className="right-sidebar glass">
-        <div className="files-header">
-          <div className="files-title">Activity & Files</div>
-          <button className="close-sidebar-btn" onClick={handleBackToTasks}>×</button>
-        </div>
+      <RightSidebar
+        selectedTask={selectedTask}
+        fileChanges={fileChanges}
+        gitDiff={gitDiff}
+        activityLog={activityLog}
+        onClose={handleBackToTasks}
+        activityEndRef={activityEndRef}
+      />
 
-        <div className="files-container">
-          {selectedTask ? (
-            <>
-              <div className="files-section">
-                <div className="section-header">
-                  <span className="section-icon">📁</span>
-                  <span className="section-title">Files Changed</span>
-                  <span className="section-count">{fileChanges.length}</span>
-                </div>
-                <div className="files-list">
-                  {fileChanges.map((file, idx) => (
-                    <div key={idx} className="file-item">
-                      <span className={`file-type-icon ${file.type}`}>
-                        {file.type === 'added' ? '+' : file.type === 'modified' ? 'M' : '-'}
-                      </span>
-                      <span className="file-path">{file.path}</span>
-                      {(file.additions || file.deletions) && (
-                        <span className="file-changes">
-                          {file.additions ? <span className="additions">+{file.additions}</span> : null}
-                          {file.deletions ? <span className="deletions">-{file.deletions}</span> : null}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+      <NewTaskModal
+        isOpen={showTaskModal}
+        taskDescription={newTaskDescription}
+        onDescriptionChange={setNewTaskDescription}
+        onClose={() => setShowTaskModal(false)}
+        onCreate={handleCreateTask}
+      />
 
-              {gitDiff && (
-                <div className="diff-section">
-                  <div className="section-header">
-                    <span className="section-icon">🔀</span>
-                    <span className="section-title">Git Diff</span>
-                  </div>
-                  <pre className="diff-content">{gitDiff}</pre>
-                </div>
-              )}
-
-              <div className="activity-section">
-                <div className="section-header">
-                  <span className="section-icon">⚡</span>
-                  <span className="section-title">Tool Activity</span>
-                </div>
-                <div className="activity-list">
-                  {activityLog.filter(log => log.type === 'tool_use' || log.type === 'tool_result').map((log, idx) => (
-                    <div key={idx} className="activity-item-compact">
-                      {log.type === 'tool_use' && (
-                        <div className="tool-use-compact">
-                          <span className="tool-icon">🔧</span>
-                          <span className="tool-name">{log.tool}</span>
-                        </div>
-                      )}
-                      {log.type === 'tool_result' && (
-                        <div className="tool-result-compact">
-                          <span className="result-icon">✓</span>
-                          <span className="result-text">Completed</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  <div ref={activityEndRef} />
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="empty-state">
-              <div className="empty-icon">📊</div>
-              <div className="empty-text">Select a task to see file changes and activity</div>
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {showTaskModal && (
-        <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>
-          <div className="modal glass" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Create New Task</h2>
-              <button className="modal-close" onClick={() => setShowTaskModal(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Task Description</label>
-                <textarea
-                  placeholder="Describe what you want the AI to do..."
-                  value={newTaskDescription}
-                  onChange={(e) => setNewTaskDescription(e.target.value)}
-                  className="form-textarea"
-                  rows={6}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowTaskModal(false)}>Cancel</button>
-              <button className="btn-primary" onClick={handleCreateTask}>Create Task</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showNewSessionModal && (
-        <div className="modal-overlay" onClick={() => setShowNewSessionModal(false)}>
-          <div className="modal glass" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Create New Session</h2>
-              <button className="modal-close" onClick={() => setShowNewSessionModal(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Folder Path (optional)</label>
-                <input
-                  type="text"
-                  placeholder="Start typing to search folders..."
-                  value={newSessionFolder}
-                  onChange={(e) => {
-                    setNewSessionFolder(e.target.value)
-                    searchSessionFolders(e.target.value)
-                  }}
-                  className="form-input"
-                />
-                {newSessionFolderSuggestions.length > 0 && (
-                  <div className="folder-suggestions">
-                    {newSessionFolderSuggestions.map((folder, idx) => (
-                      <div
-                        key={idx}
-                        className="folder-suggestion-item"
-                        onClick={() => {
-                          setNewSessionFolder(folder)
-                          setNewSessionFolderSuggestions([])
-                        }}
-                      >
-                        📁 {folder}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowNewSessionModal(false)}>Cancel</button>
-              <button className="btn-primary" onClick={handleCreateSession}>Create Session</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NewSessionModal
+        isOpen={showNewSessionModal}
+        folderPath={newSessionFolder}
+        suggestions={newSessionFolderSuggestions}
+        onFolderPathChange={(value) => {
+          setNewSessionFolder(value)
+          searchSessionFolders(value)
+        }}
+        onClose={() => {
+          setShowNewSessionModal(false)
+          setNewSessionFolder('')
+          setNewSessionFolderSuggestions([])
+        }}
+        onCreate={handleCreateSession}
+      />
     </div>
   )
 }

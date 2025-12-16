@@ -1,0 +1,210 @@
+.right-sidebar {
+  width: 320px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+  height: 100vh;
+  overflow: hidden;
+  background: rgba(15, 15, 15, 0.7);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.files-header {
+  padding: 20px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.files-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.close-sidebar-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(0, 143, 229, 0.1);
+  color: #008FE5;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-sidebar-btn:hover {
+  background: rgba(0, 143, 229, 0.2);
+  transform: scale(1.1);
+}
+
+.files-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.files-section, .diff-section, .activity-section {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid rgba(0, 143, 229, 0.1);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 143, 229, 0.1);
+}
+
+.section-icon {
+  font-size: 16px;
+}
+
+.files-section .section-title,
+.diff-section .section-title,
+.activity-section .section-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.section-count {
+  font-size: 11px;
+  color: #64748b;
+  padding: 2px 8px;
+  background: rgba(0, 143, 229, 0.1);
+  border-radius: 8px;
+}
+
+.files-list, .activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.file-type-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.file-type-icon.added {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.file-type-icon.modified {
+  background: rgba(0, 143, 229, 0.15);
+  color: #008FE5;
+}
+
+.file-type-icon.deleted {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.file-path {
+  flex: 1;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-changes {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.additions {
+  color: #10b981;
+}
+
+.deletions {
+  color: #ef4444;
+}
+
+.diff-content {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 11px;
+  color: #1a1a1a;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.activity-item-compact {
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.tool-use-compact, .tool-result-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+}
+
+.tool-name {
+  font-weight: 500;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  opacity: 0.2;
+  color: #64748b;
+}
+
+.empty-text {
+  font-size: 16px;
+  color: #94a3b8;
+  text-align: center;
+}
