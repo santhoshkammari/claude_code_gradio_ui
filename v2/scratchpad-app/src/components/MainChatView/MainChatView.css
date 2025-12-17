@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   z-index: 100;
-  padding: 0 2rem 2rem 2rem;
+  padding: 0;
   pointer-events: none;
 }
 
@@ -85,6 +85,7 @@
   gap: 0.4rem;
   flex-shrink: 0;
   padding-bottom: 0.4rem;
+  justify-content: flex-end;
 }
 
 .pill-icon {
@@ -259,19 +260,17 @@
 }
 
 .input-main-area {
-  padding: 0.75rem;
+  padding: 0.25rem;
   display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  gap: 0.5rem;
-  min-height: 120px;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .minimal-textarea {
-  flex: 1;
+  width: 100%;
   min-height: 100px;
   max-height: 200px;
-  padding: 0.6rem 12px 0.6rem 0.6rem;
+  padding: 0.6rem;
   background: transparent;
   border: none;
   color: var(--text-primary);
@@ -279,6 +278,8 @@
   font-family: inherit;
   resize: none;
   outline: none;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .minimal-textarea::placeholder {
