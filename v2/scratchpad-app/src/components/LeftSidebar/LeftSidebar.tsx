@@ -18,6 +18,8 @@ interface LeftSidebarProps {
   onDeleteTask: (id: string) => void
   onNewSession: (folderPath?: string) => void
   onToggleSession: (id: string) => void
+  isCollapsed: boolean
+  onToggleCollapse: () => void
 }
 
 export default function LeftSidebar({
@@ -31,7 +33,9 @@ export default function LeftSidebar({
   onDeleteSession,
   onDeleteTask,
   onNewSession,
-  onToggleSession
+  onToggleSession,
+  isCollapsed,
+  onToggleCollapse
 }: LeftSidebarProps) {
   const [openMenuTaskId, setOpenMenuTaskId] = useState<string | null>(null);
   const [showNewSessionInput, setShowNewSessionInput] = useState(false);
@@ -117,13 +121,24 @@ export default function LeftSidebar({
   };
 
   return (
-    <aside className="left-sidebar">
+    <aside className={`left-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <div className="logo">
-          <div className="logo-icon">🤖</div>
-          <span>Scratchpad AI</span>
-        </div>
-        <ThemeToggle />
+        <button className="hamburger-toggle" onClick={onToggleCollapse}>
+          <span className="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+        {!isCollapsed && (
+          <>
+            <div className="logo">
+              <div className="logo-icon">🤖</div>
+              <span>Scratchpad AI</span>
+            </div>
+            <ThemeToggle />
+          </>
+        )}
       </div>
 
       <div className="sessions-section">
@@ -136,35 +151,42 @@ export default function LeftSidebar({
             return (
               <div key={session.id} className="session-with-tasks">
                 <div
-                  className={`session-item ${currentSession?.id === session.id ? 'active' : ''}`}
+                  className={`session-item ${
+                    currentSession?.id === session.id ? 'active' : ''
+                  } ${isCollapsed ? 'icon-only' : ''}`}
+                  data-title={session.title}
                   onClick={() => onSessionClick(session)}
                   onMouseEnter={() => setHoveredSessionId(session.id)}
                   onMouseLeave={() => setHoveredSessionId(null)}
                   title={session.folder_path || ''}
                 >
-                  <div className="session-header">
-                    <div className="session-icon">🔬</div>
-                    <div className="session-info">
-                      <div className="session-title">{session.title}</div>
-                      <div className="session-date">{new Date(session.updated_at).toLocaleDateString()}</div>
-                      {session.folder_path && hoveredSessionId === session.id && (
-                        <div className="session-folder-tooltip">📁 {session.folder_path}</div>
-                      )}
-                    </div>
-                    <div className="session-toggle" onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleSession(session.id);
-                    }}>
-                      {isCollapsed ? '▶' : '▼'}
-                    </div>
-                  </div>
-                  <button className="delete-btn-small" onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteSession(session.id)
-                  }}>×</button>
+                  <div className="session-icon">📁</div>
+                  {!isCollapsed && (
+                    <>
+                      <div className="session-header">
+                        <div className="session-info">
+                          <div className="session-title">{session.title}</div>
+                          <div className="session-date">{new Date(session.updated_at).toLocaleDateString()}</div>
+                          {session.folder_path && hoveredSessionId === session.id && (
+                            <div className="session-folder-tooltip">📁 {session.folder_path}</div>
+                          )}
+                        </div>
+                        <div className="session-toggle" onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleSession(session.id);
+                        }}>
+                          {collapsedSessions[session.id] ? '▶' : '▼'}
+                        </div>
+                      </div>
+                      <button className="delete-btn-small" onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteSession(session.id)
+                      }}>×</button>
+                    </>
+                  )}
                 </div>
 
-                {!isCollapsed && sessionTasks.length > 0 && (
+                {!collapsedSessions[session.id] && sessionTasks.length > 0 && (
                   <div className="session-tasks-list">
                     {sessionTasks.map(task => (
                       <div
@@ -205,67 +227,79 @@ export default function LeftSidebar({
           })}
         </div>
 
-        <div
-          className="new-session-container"
-          onMouseEnter={() => setShowNewSessionInput(true)}
-          onMouseLeave={() => {
-            if (!newSessionPath && folderSuggestions.length === 0) {
-              setShowNewSessionInput(false);
-            }
-          }}
-        >
-          {showNewSessionInput && (
-            <div className="new-session-input-wrapper">
-              {folderSuggestions.length > 0 && (
-                <div className="folder-suggestions">
-                  {folderSuggestions.slice(0, 5).map((path, idx) => (
-                    <div
-                      key={idx}
-                      className="folder-suggestion-item"
-                      onClick={() => handleCreateSession(path)}
-                    >
-                      📁 {path}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <input
-                ref={inputRef}
-                type="text"
-                className="new-session-input"
-                placeholder="Enter folder path..."
-                value={newSessionPath}
-                onChange={(e) => handleNewSessionInputChange(e.target.value)}
-                onKeyDown={handleNewSessionKeyDown}
-                onBlur={() => {
-                  setTimeout(() => {
-                    setShowNewSessionInput(false);
-                    setNewSessionPath('');
-                    setFolderSuggestions([]);
-                  }, 200);
-                }}
-              />
-            </div>
-          )}
-
-          <button
-            ref={newSessionBtnRef}
-            className="new-session-btn"
+        {!isCollapsed ? (
+          <div
+            className="new-session-container"
+            onMouseEnter={() => setShowNewSessionInput(true)}
+            onMouseLeave={() => {
+              if (!newSessionPath && folderSuggestions.length === 0) {
+                setShowNewSessionInput(false);
+              }
+            }}
           >
-            + New Session
+            {showNewSessionInput && (
+              <div className="new-session-input-wrapper">
+                {folderSuggestions.length > 0 && (
+                  <div className="folder-suggestions">
+                    {folderSuggestions.slice(0, 5).map((path, idx) => (
+                      <div
+                        key={idx}
+                        className="folder-suggestion-item"
+                        onClick={() => handleCreateSession(path)}
+                      >
+                        📁 {path}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="new-session-input"
+                  placeholder="Enter folder path..."
+                  value={newSessionPath}
+                  onChange={(e) => handleNewSessionInputChange(e.target.value)}
+                  onKeyDown={handleNewSessionKeyDown}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      setShowNewSessionInput(false);
+                      setNewSessionPath('');
+                      setFolderSuggestions([]);
+                    }, 200);
+                  }}
+                />
+              </div>
+            )}
+
+            <button
+              ref={newSessionBtnRef}
+              className="new-session-btn"
+            >
+              + New Session
+            </button>
+          </div>
+        ) : (
+          <button
+            className="new-session-icon"
+            onClick={() => setShowNewSessionInput(true)}
+            title="New Session"
+          >
+            <span>+</span>
           </button>
-        </div>
+        )}
       </div>
 
-      <div className="profile-section">
-        <div className="profile-card glass">
-          <div className="profile-avatar">👤</div>
-          <div className="profile-info">
-            <div className="profile-name">User</div>
-            <div className="profile-status">Active</div>
+      {!isCollapsed && (
+        <div className="profile-section">
+          <div className="profile-card glass">
+            <div className="profile-avatar">👤</div>
+            <div className="profile-info">
+              <div className="profile-name">User</div>
+              <div className="profile-status">Active</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </aside>
   )
 }

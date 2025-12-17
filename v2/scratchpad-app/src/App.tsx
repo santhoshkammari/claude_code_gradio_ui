@@ -8,7 +8,7 @@ import ChatView from './components/ChatView/ChatView'
 import MainChatView from './components/MainChatView/MainChatView'
 import NewTaskModal from './components/Modals/NewTaskModal'
 import NewSessionModal from './components/Modals/NewSessionModal'
-import type { Session, Task, FileChange } from './types'
+import type { Session, Task } from './types'
 
 const API_URL = 'http://localhost:3001/api'
 
@@ -20,7 +20,6 @@ function App() {
   const [showChat, setShowChat] = useState(false)
   const [activityLog, setActivityLog] = useState<any[]>([])
   const [chatMessages, setChatMessages] = useState<any[]>([])
-  const [fileChanges, setFileChanges] = useState<FileChange[]>([])
   const [gitDiff, setGitDiff] = useState<string>('')
   const [taskFilter, setTaskFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all')
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -33,6 +32,7 @@ function App() {
   const [selectedModel, setSelectedModel] = useState('sonnet')
   const [showSidebar, setShowSidebar] = useState(false)
   const [collapsedSessions, setCollapsedSessions] = useState<Record<string, boolean>>({})
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const activityEndRef = useRef<HTMLDivElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -107,7 +107,6 @@ function App() {
     try {
       const res = await fetch(`${API_URL}/tasks/${taskId}/files`)
       const data = await res.json()
-      setFileChanges(data.files || [])
       setGitDiff(data.diff || '')
     } catch (err) {
       console.error('Failed to fetch file changes:', err)
@@ -395,9 +394,12 @@ function App() {
       setShowChat(false)
       setChatMessages([])
       setActivityLog([])
-      setFileChanges([])
       setGitDiff('')
     }
+  }
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed)
   }
 
   return (
@@ -423,6 +425,8 @@ function App() {
             [id]: !prev[id]
           }));
         }}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebar}
       />
 
       <main className="main-content">
@@ -477,12 +481,8 @@ function App() {
       </main>
 
       <RightSidebar
-        selectedTask={selectedTask}
-        fileChanges={fileChanges}
         gitDiff={gitDiff}
-        activityLog={activityLog}
         onClose={handleBackToTasks}
-        activityEndRef={activityEndRef}
       />
 
       <NewTaskModal

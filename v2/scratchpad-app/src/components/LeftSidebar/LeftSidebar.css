@@ -480,3 +480,132 @@
   color: #909090; /* text-tertiary equivalent */
   background: #171717;
 }
+
+/* Hamburger Toggle Button */
+.hamburger-toggle {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.hamburger-toggle:hover {
+  background: #262626; /* Using bg-tertiary equivalent for hover */
+  border-radius: 6px;
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 18px;
+}
+
+.hamburger-icon span {
+  height: 2px;
+  background: #e0e0e0; /* text-primary equivalent */
+  border-radius: 2px;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+/* Animated hamburger to X when expanded */
+.left-sidebar:not(.collapsed) .hamburger-icon span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.left-sidebar:not(.collapsed) .hamburger-icon span:nth-child(2) {
+  opacity: 0;
+}
+
+.left-sidebar:not(.collapsed) .hamburger-icon span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+/* Collapsed State */
+.left-sidebar.collapsed {
+  width: 50px;
+  padding: 12px 8px;
+}
+
+.left-sidebar.collapsed .sidebar-header {
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Hide text content when collapsed */
+.left-sidebar.collapsed .logo,
+.left-sidebar.collapsed .theme-toggle,
+.left-sidebar.collapsed .session-info,
+.left-sidebar.collapsed .session-toggle,
+.left-sidebar.collapsed .session-tasks-list,
+.left-sidebar.collapsed .new-session-container,
+.left-sidebar.collapsed .profile-card {
+  display: none;
+}
+
+/* Icon-only session items */
+.session-item.icon-only {
+  padding: 8px;
+  justify-content: center;
+  position: relative;
+}
+
+.session-item.icon-only .session-icon {
+  font-size: 20px;
+  margin: 0;
+}
+
+/* Tooltips for collapsed mode */
+.left-sidebar.collapsed .session-item:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #262626; /* bg-tertiary equivalent */
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 1000;
+  border: 1px solid #333333;
+}
+
+/* New session icon button */
+.new-session-icon {
+  width: 100%;
+  height: 36px;
+  background: #008FE5; /* accent-primary equivalent */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.new-session-icon:hover {
+  background: #007bb7; /* accent-hover equivalent */
+}
+
+/* Collapsed profile section */
+.left-sidebar.collapsed .profile-section {
+  padding: 8px;
+}
+
+.left-sidebar.collapsed .profile-avatar {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+}

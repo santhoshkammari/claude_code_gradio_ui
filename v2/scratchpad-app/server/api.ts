@@ -49,6 +49,16 @@ db.exec(`
   );
 `)
 
+// Add session ID columns for Claude and Qwen
+try {
+  db.exec(`
+    ALTER TABLE tasks ADD COLUMN claude_session_id TEXT;
+    ALTER TABLE tasks ADD COLUMN qwen_session_id TEXT;
+  `)
+} catch (err) {
+  // Columns already exist, ignore error
+}
+
 const sessionStmts = {
   getAll: db.prepare('SELECT * FROM sessions ORDER BY updated_at DESC'),
   getById: db.prepare('SELECT * FROM sessions WHERE id = ?'),
@@ -62,6 +72,13 @@ const taskStmts = {
   getById: db.prepare('SELECT * FROM tasks WHERE id = ?'),
   create: db.prepare('INSERT INTO tasks (id, session_id, title, content, status, priority, model, folder_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
   updateStatus: db.prepare('UPDATE tasks SET status = ?, model = ?, updated_at = ? WHERE id = ?'),
+  updateSessionId: db.prepare(`
+    UPDATE tasks
+    SET claude_session_id = COALESCE(?, claude_session_id),
+        qwen_session_id = COALESCE(?, qwen_session_id),
+        updated_at = ?
+    WHERE id = ?
+  `),
   delete: db.prepare('DELETE FROM tasks WHERE id = ?')
 }
 
@@ -215,8 +232,10 @@ app.post('/api/tasks/:taskId/execute', async (req, res) => {
 async function executeClaudeTask(taskId: string, title: string, description: string, model: string, folderPath?: string) {
   try {
     const cwd = folderPath ? path.resolve(folderPath) : process.cwd()
+    const task: any = taskStmts.getById.get(taskId)
 
-    const stream = query({
+    // Resume existing session if available
+    const queryOptions: any = {
       prompt: `Task: ${title}\n\nDescription: ${description}\n\nPlease work on this task and provide updates on your progress.`,
       options: {
         model: model || 'sonnet',
@@ -226,9 +245,32 @@ async function executeClaudeTask(taskId: string, title: string, description: str
         allowDangerouslySkipPermissions: true,
         cwd
       }
-    })
+    }
+
+    // If task has an existing Claude session ID, include it to resume
+    if (task.claude_session_id) {
+      queryOptions.sessionId = task.claude_session_id
+      broadcastToTask(taskId, {
+        type: 'session_resume',
+        data: { sessionId: task.claude_session_id }
+      })
+    }
+
+    const stream = query(queryOptions)
+
+    let capturedSessionId: string | null = null
 
     for await (const msg of stream) {
+      // Capture session ID from Claude SDK if available
+      if ((msg as any).session_id && !capturedSessionId) {
+        capturedSessionId = (msg as any).session_id
+        taskStmts.updateSessionId.run(capturedSessionId, null, Date.now(), taskId)
+        broadcastToTask(taskId, {
+          type: 'session_created',
+          data: { sessionId: capturedSessionId }
+        })
+      }
+
       if (msg.type === 'assistant') {
         for (const content of msg.message.content) {
           if (content.type === 'text') {
@@ -298,11 +340,28 @@ async function executeQwenTask(taskId: string, title: string, description: strin
   return new Promise((resolve, reject) => {
     const prompt = `Task: ${title}\n\nDescription: ${description}\n\nPlease work on this task and provide updates on your progress.`
     const cwd = folderPath ? path.resolve(folderPath) : process.cwd()
+    const task: any = taskStmts.getById.get(taskId)
+
+    // Build Qwen arguments
+    const qwenArgs = ['-y', '-o', 'stream-json']
+
+    // Resume existing Qwen session if available
+    if (task.qwen_session_id) {
+      qwenArgs.push('--resume', task.qwen_session_id)
+      broadcastToTask(taskId, {
+        type: 'session_resume',
+        data: { sessionId: task.qwen_session_id }
+      })
+    }
+
+    qwenArgs.push('-p', prompt)
 
     // Use stream-json output format for Qwen
-    const qwen = spawn('qwen', ['-y', '-o', 'stream-json', '-p', prompt], { cwd })
+    const qwen = spawn('qwen', qwenArgs, { cwd })
 
     let buffer = '';
+    let capturedSessionId: string | null = null
+
     qwen.stdout.on('data', (data) => {
       buffer += data.toString();
 
@@ -314,6 +373,17 @@ async function executeQwenTask(taskId: string, title: string, description: strin
         if (line.trim()) {
           try {
             const jsonMsg = JSON.parse(line.trim());
+
+            // Capture session ID from Qwen response (appears in first message)
+            if (jsonMsg.session_id && !capturedSessionId) {
+              capturedSessionId = jsonMsg.session_id
+              taskStmts.updateSessionId.run(null, capturedSessionId, Date.now(), taskId)
+              broadcastToTask(taskId, {
+                type: 'session_created',
+                data: { sessionId: capturedSessionId }
+              })
+            }
+
             broadcastToTask(taskId, jsonMsg);
           } catch (e) {
             console.error('Error parsing Qwen stream-json:', e);
