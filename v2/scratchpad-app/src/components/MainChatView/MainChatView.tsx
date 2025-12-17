@@ -155,11 +155,39 @@ export default function MainChatView({ onSubmitMessage }: MainChatViewProps) {
   return (
     <div className="minimal-chat-overlay">
       <div className="chat-input-floating">
-        <div className="input-top-bar">
-          <div className="config-pills">
+        {attachedFiles.length > 0 && (
+          <div className="attachment-tray">
+            {attachedFiles.map((file, idx) => (
+              <div key={idx} className="file-badge-compact">
+                <span>{file.type.startsWith('image/') ? '🖼️' : '📎'}</span>
+                <span>{file.name}</span>
+                <button onClick={() => handleRemoveFile(idx)}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="input-main-area">
+          <textarea
+            ref={textareaRef}
+            className="minimal-textarea"
+            placeholder="What would you like to build?"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onPaste={handlePaste}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleSubmit()
+              }
+            }}
+            rows={1}
+          />
+
+          <div className="input-controls-inline">
             <div className="pill-wrapper" ref={modelDropdownRef}>
               <button
-                className="config-pill"
+                className="config-pill-compact"
                 onClick={() => setShowModelDropdown(!showModelDropdown)}
               >
                 <span className="pill-icon">🤖</span>
@@ -192,7 +220,7 @@ export default function MainChatView({ onSubmitMessage }: MainChatViewProps) {
 
             <div className="pill-wrapper" ref={agentDropdownRef}>
               <button
-                className="config-pill"
+                className="config-pill-compact"
                 onClick={() => setShowAgentDropdown(!showAgentDropdown)}
               >
                 <span className="pill-icon">⚡</span>
@@ -216,7 +244,7 @@ export default function MainChatView({ onSubmitMessage }: MainChatViewProps) {
 
             <div className="pill-wrapper" ref={toolsDropdownRef}>
               <button
-                className="config-pill"
+                className="config-pill-compact"
                 onClick={() => setShowToolsDropdown(!showToolsDropdown)}
               >
                 <span className="pill-icon">🛠️</span>
@@ -243,40 +271,9 @@ export default function MainChatView({ onSubmitMessage }: MainChatViewProps) {
                 </div>
               )}
             </div>
-          </div>
 
-          {attachedFiles.length > 0 && (
-            <div className="attached-files-mini">
-              {attachedFiles.map((file, idx) => (
-                <div key={idx} className="file-mini">
-                  <span>{file.type.startsWith('image/') ? '🖼️' : '📎'}</span>
-                  <button onClick={() => handleRemoveFile(idx)}>×</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="input-main-area">
-          <textarea
-            ref={textareaRef}
-            className="minimal-textarea"
-            placeholder="What would you like to build?"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onPaste={handlePaste}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSubmit()
-              }
-            }}
-            rows={1}
-          />
-
-          <div className="input-actions-mini">
             <button
-              className="icon-btn"
+              className="icon-btn icon-btn-compact"
               onClick={() => fileInputRef.current?.click()}
               title="Attach file"
             >

@@ -23,12 +23,7 @@
 }
 
 .input-top-bar {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  display: none;
 }
 
 .config-pills {
@@ -59,6 +54,37 @@
 .config-pill:hover {
   background: var(--bg-hover);
   border-color: var(--border-hover);
+}
+
+.config-pill-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.5rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  height: 28px;
+  opacity: 0.8;
+}
+
+.config-pill-compact:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+  opacity: 1;
+}
+
+.input-controls-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding-bottom: 0.4rem;
 }
 
 .pill-icon {
@@ -195,18 +221,57 @@
   color: var(--text-primary);
 }
 
+.attachment-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.file-badge-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.file-badge-compact button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0 0.2rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.file-badge-compact button:hover {
+  color: var(--text-primary);
+}
+
 .input-main-area {
   padding: 0.75rem;
   display: flex;
+  flex-direction: row;
   align-items: flex-end;
   gap: 0.5rem;
+  min-height: 120px;
 }
 
 .minimal-textarea {
   flex: 1;
-  min-height: 40px;
+  min-height: 100px;
   max-height: 200px;
-  padding: 0.6rem;
+  padding: 0.6rem 12px 0.6rem 0.6rem;
   background: transparent;
   border: none;
   color: var(--text-primary);
