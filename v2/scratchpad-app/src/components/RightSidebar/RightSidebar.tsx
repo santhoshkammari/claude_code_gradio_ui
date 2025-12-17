@@ -1,98 +1,135 @@
+import { useState, useEffect, useRef } from 'react'
 import './RightSidebar.css'
-import type { FileChange } from '../../types'
+
+interface FileDiff {
+  path: string
+  additions: number
+  deletions: number
+  diff: string
+}
 
 interface RightSidebarProps {
-  selectedTask: any
-  fileChanges: FileChange[]
   gitDiff: string
-  activityLog: any[]
   onClose: () => void
-  activityEndRef: React.RefObject<HTMLDivElement | null>
 }
 
 export default function RightSidebar({
-  selectedTask,
-  fileChanges,
   gitDiff,
-  activityLog,
-  onClose,
-  activityEndRef
+  onClose
 }: RightSidebarProps) {
+  const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set())
+  const [parsedFiles, setParsedFiles] = useState<FileDiff[]>([])
+  const hasInitialized = useRef(false)
+
+  const parseGitDiff = (diff: string): FileDiff[] => {
+    const files: FileDiff[] = []
+    const diffBlocks = diff.split('diff --git')
+
+    for (let i = 1; i < diffBlocks.length; i++) {
+      const block = diffBlocks[i]
+      const lines = block.split('\n')
+
+      // Extract filename from "a/path b/path"
+      const fileMatch = lines[0].match(/a\/(.*?) b\/(.*)$/)
+      if (!fileMatch) continue
+
+      const filename = fileMatch[2]
+
+      // Count additions and deletions
+      let additions = 0
+      let deletions = 0
+      let diffContent = ''
+
+      for (const line of lines) {
+        if (line.startsWith('+') && !line.startsWith('+++')) additions++
+        if (line.startsWith('-') && !line.startsWith('---')) deletions++
+        diffContent += line + '\n'
+      }
+
+      files.push({
+        path: filename,
+        additions,
+        deletions,
+        diff: diffContent.trim()
+      })
+    }
+
+    return files
+  }
+
+  useEffect(() => {
+    if (gitDiff) {
+      const files = parseGitDiff(gitDiff)
+      setParsedFiles(files)
+
+      // Only expand the first file on initial load or when gitDiff changes significantly
+      if (!hasInitialized.current && files.length > 0) {
+        setExpandedFiles(prev => {
+          hasInitialized.current = true;
+          return new Set([...prev, files[0].path]);
+        });
+      }
+    } else {
+      setParsedFiles([])
+      setExpandedFiles(() => {
+        hasInitialized.current = false;
+        return new Set();
+      })
+    }
+  }, [gitDiff])
+
+  const toggleFileExpand = (path: string) => {
+    setExpandedFiles(prev => {
+      const next = new Set(prev)
+      if (next.has(path)) {
+        next.delete(path)
+      } else {
+        next.add(path)
+      }
+      return next
+    })
+  }
+
   return (
-    <aside className="right-sidebar glass">
-      <div className="files-header">
-        <div className="files-title">Activity & Files</div>
-        <button className="close-sidebar-btn" onClick={onClose}>×</button>
+    <aside className="right-sidebar">
+      <div className="sidebar-header">
+        <h3>Git Changes</h3>
+        <button className="close-button" onClick={onClose}>
+          ×
+        </button>
       </div>
 
-      <div className="files-container">
-        {selectedTask ? (
-          <>
-            <div className="files-section">
-              <div className="section-header">
-                <span className="section-icon">📁</span>
-                <span className="section-title">Files Changed</span>
-                <span className="section-count">{fileChanges.length}</span>
-              </div>
-              <div className="files-list">
-                {fileChanges.map((file, idx) => (
-                  <div key={idx} className="file-item">
-                    <span className={`file-type-icon ${file.type}`}>
-                      {file.type === 'added' ? '+' : file.type === 'modified' ? 'M' : '-'}
-                    </span>
-                    <span className="file-path">{file.path}</span>
-                    {(file.additions || file.deletions) && (
-                      <span className="file-changes">
-                        {file.additions ? <span className="additions">+{file.additions}</span> : null}
-                        {file.deletions ? <span className="deletions">-{file.deletions}</span> : null}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {gitDiff && (
-              <div className="diff-section">
-                <div className="section-header">
-                  <span className="section-icon">🔀</span>
-                  <span className="section-title">Git Diff</span>
-                </div>
-                <pre className="diff-content">{gitDiff}</pre>
-              </div>
-            )}
-
-            <div className="activity-section">
-              <div className="section-header">
-                <span className="section-icon">⚡</span>
-                <span className="section-title">Tool Activity</span>
-              </div>
-              <div className="activity-list">
-                {activityLog.filter(log => log.type === 'tool_use' || log.type === 'tool_result').map((log, idx) => (
-                  <div key={idx} className="activity-item-compact">
-                    {log.type === 'tool_use' && (
-                      <div className="tool-use-compact">
-                        <span className="tool-icon">🔧</span>
-                        <span className="tool-name">{log.tool}</span>
-                      </div>
-                    )}
-                    {log.type === 'tool_result' && (
-                      <div className="tool-result-compact">
-                        <span className="result-icon">✓</span>
-                        <span className="result-text">Completed</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <div ref={activityEndRef} />
-              </div>
-            </div>
-          </>
+      <div className="files-diff-section">
+        {parsedFiles.length === 0 ? (
+          <div className="empty-state">No changes detected</div>
         ) : (
-          <div className="empty-state">
-            <div className="empty-icon">📊</div>
-            <div className="empty-text">Select a task to see file changes and activity</div>
-          </div>
+          parsedFiles.map((file) => {
+            const isExpanded = expandedFiles.has(file.path)
+
+            return (
+              <div key={file.path} className="file-diff-item">
+                <div
+                  className="file-diff-header"
+                  onClick={() => toggleFileExpand(file.path)}
+                >
+                  <span className="expand-icon">
+                    {isExpanded ? '▼' : '▶'}
+                  </span>
+                  <span className="file-path">{file.path}</span>
+                  <div className="file-stats">
+                    <span className="additions">+{file.additions}</span>
+                    <span className="deletions">-{file.deletions}</span>
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <pre className="file-diff-content">
+                    <code>{file.diff}</code>
+                  </pre>
+                )}
+              </div>
+            )
+          })
         )}
       </div>
     </aside>

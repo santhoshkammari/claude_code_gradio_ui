@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import './components/shared/common.css'
-import LeftSidebar from './components/LeftSidebar/LeftSidebar'
-import RightSidebar from './components/RightSidebar/RightSidebar'
 import TaskGrid from './components/TaskGrid/TaskGrid'
 import ChatView from './components/ChatView/ChatView'
 import MainChatView from './components/MainChatView/MainChatView'
 import NewTaskModal from './components/Modals/NewTaskModal'
 import NewSessionModal from './components/Modals/NewSessionModal'
-import type { Session, Task, FileChange } from './types'
+import type { Session, Task } from './types'
 
 const API_URL = 'http://localhost:3001/api'
 
@@ -20,7 +18,6 @@ function App() {
   const [showChat, setShowChat] = useState(false)
   const [activityLog, setActivityLog] = useState<any[]>([])
   const [chatMessages, setChatMessages] = useState<any[]>([])
-  const [fileChanges, setFileChanges] = useState<FileChange[]>([])
   const [gitDiff, setGitDiff] = useState<string>('')
   const [taskFilter, setTaskFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all')
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -31,8 +28,6 @@ function App() {
   const [newSessionFolderSuggestions, setNewSessionFolderSuggestions] = useState<string[]>([])
   const [chatInput, setChatInput] = useState('')
   const [selectedModel, setSelectedModel] = useState('sonnet')
-  const [showSidebar, setShowSidebar] = useState(false)
-  const [collapsedSessions, setCollapsedSessions] = useState<Record<string, boolean>>({})
   const activityEndRef = useRef<HTMLDivElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -107,7 +102,6 @@ function App() {
     try {
       const res = await fetch(`${API_URL}/tasks/${taskId}/files`)
       const data = await res.json()
-      setFileChanges(data.files || [])
       setGitDiff(data.diff || '')
     } catch (err) {
       console.error('Failed to fetch file changes:', err)
@@ -288,7 +282,6 @@ function App() {
   const handleBackToTasks = () => {
     setShowChat(false)
     setSelectedTask(null)
-    setShowSidebar(false)
   }
 
   const startTask = async (model: string) => {
@@ -373,7 +366,6 @@ function App() {
     setTasks([newTask, ...tasks])
     setSelectedTask(newTask)
     setShowChat(true)
-    setShowSidebar(true)
 
     try {
       await fetch(`${API_URL}/tasks/${newTask.id}/execute`, {
@@ -395,36 +387,12 @@ function App() {
       setShowChat(false)
       setChatMessages([])
       setActivityLog([])
-      setFileChanges([])
       setGitDiff('')
     }
   }
 
   return (
-    <div className={`app ${showSidebar ? 'sidebar-visible' : 'sidebar-hidden'}`}>
-      <LeftSidebar
-        sessions={sessions}
-        currentSession={currentSession}
-        tasks={tasks}
-        selectedTask={selectedTask}
-        collapsedSessions={collapsedSessions}
-        onSessionClick={setCurrentSession}
-        onTaskClick={(task) => {
-          setSelectedTask(task);
-          setShowChat(true);
-          setShowSidebar(true);
-        }}
-        onDeleteSession={deleteSession}
-        onDeleteTask={deleteTask}
-        onNewSession={createSession}
-        onToggleSession={(id) => {
-          setCollapsedSessions(prev => ({
-            ...prev,
-            [id]: !prev[id]
-          }));
-        }}
-      />
-
+    <div className="app">
       <main className="main-content">
         {!showChat ? (
           <div className="main-with-overlay">
@@ -435,7 +403,6 @@ function App() {
               onTaskClick={(task) => {
                 setSelectedTask(task);
                 setShowChat(true);
-                setShowSidebar(true);
               }}
               onDeleteTask={deleteTask}
               onStartTask={async (taskId: string, model: string) => {
@@ -475,15 +442,6 @@ function App() {
           />
         )}
       </main>
-
-      <RightSidebar
-        selectedTask={selectedTask}
-        fileChanges={fileChanges}
-        gitDiff={gitDiff}
-        activityLog={activityLog}
-        onClose={handleBackToTasks}
-        activityEndRef={activityEndRef}
-      />
 
       <NewTaskModal
         isOpen={showTaskModal}
