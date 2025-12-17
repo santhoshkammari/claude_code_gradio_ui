@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import './components/shared/common.css'
-import LeftSidebar from './components/LeftSidebar/LeftSidebar'
-import RightSidebar from './components/RightSidebar/RightSidebar'
 import TaskGrid from './components/TaskGrid/TaskGrid'
 import ChatView from './components/ChatView/ChatView'
 import MainChatView from './components/MainChatView/MainChatView'
@@ -30,9 +28,6 @@ function App() {
   const [newSessionFolderSuggestions, setNewSessionFolderSuggestions] = useState<string[]>([])
   const [chatInput, setChatInput] = useState('')
   const [selectedModel, setSelectedModel] = useState('sonnet')
-  const [showSidebar, setShowSidebar] = useState(false)
-  const [collapsedSessions, setCollapsedSessions] = useState<Record<string, boolean>>({})
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const activityEndRef = useRef<HTMLDivElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -287,7 +282,6 @@ function App() {
   const handleBackToTasks = () => {
     setShowChat(false)
     setSelectedTask(null)
-    setShowSidebar(false)
   }
 
   const startTask = async (model: string) => {
@@ -372,7 +366,6 @@ function App() {
     setTasks([newTask, ...tasks])
     setSelectedTask(newTask)
     setShowChat(true)
-    setShowSidebar(true)
 
     try {
       await fetch(`${API_URL}/tasks/${newTask.id}/execute`, {
@@ -398,37 +391,8 @@ function App() {
     }
   }
 
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed)
-  }
-
   return (
-    <div className={`app ${showSidebar ? 'sidebar-visible' : 'sidebar-hidden'}`}>
-      <LeftSidebar
-        sessions={sessions}
-        currentSession={currentSession}
-        tasks={tasks}
-        selectedTask={selectedTask}
-        collapsedSessions={collapsedSessions}
-        onSessionClick={setCurrentSession}
-        onTaskClick={(task) => {
-          setSelectedTask(task);
-          setShowChat(true);
-          setShowSidebar(true);
-        }}
-        onDeleteSession={deleteSession}
-        onDeleteTask={deleteTask}
-        onNewSession={createSession}
-        onToggleSession={(id) => {
-          setCollapsedSessions(prev => ({
-            ...prev,
-            [id]: !prev[id]
-          }));
-        }}
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={toggleSidebar}
-      />
-
+    <div className="app">
       <main className="main-content">
         {!showChat ? (
           <div className="main-with-overlay">
@@ -439,7 +403,6 @@ function App() {
               onTaskClick={(task) => {
                 setSelectedTask(task);
                 setShowChat(true);
-                setShowSidebar(true);
               }}
               onDeleteTask={deleteTask}
               onStartTask={async (taskId: string, model: string) => {
@@ -479,11 +442,6 @@ function App() {
           />
         )}
       </main>
-
-      <RightSidebar
-        gitDiff={gitDiff}
-        onClose={handleBackToTasks}
-      />
 
       <NewTaskModal
         isOpen={showTaskModal}
