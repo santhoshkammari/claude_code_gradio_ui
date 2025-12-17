@@ -10,7 +10,7 @@
 
 .chat-input-floating {
   max-width: 680px;
-  margin: 0 0 0 20rem;
+  margin: 0 0 0 15rem;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: 12px;
