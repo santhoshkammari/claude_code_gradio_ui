@@ -1,21 +1,5 @@
 import { useState, useEffect } from 'react'
 
-const EXCLUDED_PATTERNS = [
-  /^\./,
-  /node_modules/,
-  /\.git$/,
-  /dist$/,
-  /build$/,
-  /out$/,
-  /__pycache__/,
-  /\.next/,
-  /\.vscode/,
-  /\.idea/,
-  /package-lock\.json/,
-  /yarn\.lock/,
-  /pnpm-lock\.yaml/
-]
-
 export async function searchFolders(query: string, basePath: string = process.cwd()): Promise<string[]> {
   if (!query || query.length < 2) return []
 

@@ -20,6 +20,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
+    folder_path TEXT,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   );
@@ -51,7 +52,7 @@ db.exec(`
 const sessionStmts = {
   getAll: db.prepare('SELECT * FROM sessions ORDER BY updated_at DESC'),
   getById: db.prepare('SELECT * FROM sessions WHERE id = ?'),
-  create: db.prepare('INSERT INTO sessions (id, title, created_at, updated_at) VALUES (?, ?, ?, ?)'),
+  create: db.prepare('INSERT INTO sessions (id, title, folder_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'),
   update: db.prepare('UPDATE sessions SET title = ?, updated_at = ? WHERE id = ?'),
   delete: db.prepare('DELETE FROM sessions WHERE id = ?')
 }
@@ -96,10 +97,10 @@ app.get('/api/sessions', (req, res) => {
 })
 
 app.post('/api/sessions', (req, res) => {
-  const { id, title } = req.body
+  const { id, title, folder_path } = req.body
   const now = Date.now()
-  sessionStmts.create.run(id, title, now, now)
-  res.json({ id, title, created_at: now, updated_at: now })
+  sessionStmts.create.run(id, title, folder_path || null, now, now)
+  res.json({ id, title, folder_path, created_at: now, updated_at: now })
 })
 
 app.delete('/api/sessions/:id', (req, res) => {
@@ -123,6 +124,34 @@ app.delete('/api/tasks/:id', (req, res) => {
   taskStmts.delete.run(req.params.id)
   activityStmts.deleteByTask.run(req.params.id)
   res.json({ success: true })
+})
+
+app.put('/api/tasks/:id', (req, res) => {
+  const { id } = req.params
+  const { model } = req.body
+  const now = Date.now()
+
+  // Only update model for now, but could extend to other fields
+  const task = taskStmts.getById.get(id)
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' })
+  }
+
+  // Update only the model field and updated_at timestamp
+  db.prepare('UPDATE tasks SET model = ?, updated_at = ? WHERE id = ?').run(model, now, id)
+
+  res.json({
+    id: task.id,
+    session_id: task.session_id,
+    title: task.title,
+    content: task.content,
+    status: task.status,
+    priority: task.priority,
+    model: model,
+    folder_path: task.folder_path,
+    created_at: task.created_at,
+    updated_at: now
+  })
 })
 
 app.get('/api/tasks/:taskId/stream', (req, res) => {
@@ -270,26 +299,59 @@ async function executeQwenTask(taskId: string, title: string, description: strin
     const prompt = `Task: ${title}\n\nDescription: ${description}\n\nPlease work on this task and provide updates on your progress.`
     const cwd = folderPath ? path.resolve(folderPath) : process.cwd()
 
-    const qwen = spawn('qwen', ['-y', '-p', prompt], { cwd })
+    // Use stream-json output format for Qwen
+    const qwen = spawn('qwen', ['-y', '-o', 'stream-json', '-p', prompt], { cwd })
 
+    let buffer = '';
     qwen.stdout.on('data', (data) => {
-      const text = data.toString()
-      broadcastToTask(taskId, {
-        type: 'message',
-        role: 'assistant',
-        content: text
-      })
+      buffer += data.toString();
+
+      // Process complete JSON lines from the buffer
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.trim()) {
+          try {
+            const jsonMsg = JSON.parse(line.trim());
+            broadcastToTask(taskId, jsonMsg);
+          } catch (e) {
+            console.error('Error parsing Qwen stream-json:', e);
+            // Send as a regular message if JSON parsing fails
+            broadcastToTask(taskId, {
+              type: 'message',
+              role: 'assistant',
+              content: line.trim()
+            });
+          }
+        }
+      }
     })
 
     qwen.stderr.on('data', (data) => {
       broadcastToTask(taskId, {
         type: 'message',
         role: 'system',
-        content: `Error: ${data.toString()}`
+        content: `Qwen Error: ${data.toString()}`
       })
     })
 
     qwen.on('close', (code) => {
+      // Process any remaining data in buffer
+      if (buffer.trim()) {
+        try {
+          const jsonMsg = JSON.parse(buffer.trim());
+          broadcastToTask(taskId, jsonMsg);
+        } catch (e) {
+          // Send as a regular message if JSON parsing fails
+          broadcastToTask(taskId, {
+            type: 'message',
+            role: 'assistant',
+            content: buffer.trim()
+          });
+        }
+      }
+
       if (code === 0) {
         taskStmts.updateStatus.run('completed', model, Date.now(), taskId)
         broadcastToTask(taskId, { type: 'task_status', status: 'completed' })
@@ -313,6 +375,25 @@ app.get('/api/folders/search', async (req, res) => {
   }
 
   try {
+    // Use ripgrep to find directories matching the query
+    const { stdout } = await execAsync(
+      `rg --files --null ${basePath} 2>/dev/null | xargs -0 -n1 dirname | sort -u | grep -i "${query}" | head -20`,
+      { maxBuffer: 1024 * 1024 * 10 }
+    ).catch(() => ({ stdout: '' }))
+
+    if (stdout) {
+      const folders = stdout
+        .trim()
+        .split('\n')
+        .filter(p => p && !p.split('/').some(part => part.startsWith('.')))
+        .map(p => path.relative(basePath, p))
+        .filter(p => p && p !== '.')
+        .slice(0, 20)
+
+      return res.json(folders)
+    }
+
+    // Fallback: simple directory search
     const folders: string[] = []
     const searchRecursive = async (dir: string, depth: number = 0) => {
       if (depth > 3) return
