@@ -57,10 +57,10 @@ export default function ChatView({
           <div ref={chatEndRef} />
         </div>
 
-        <div className="chat-input-wrapper">
-          <div className="input-field-wrapper">
+        <div className="minimal-chat-overlay-task">
+          <div className="chat-input-floating">
             <textarea
-              className="message-input-field"
+              className="minimal-textarea"
               placeholder="Message..."
               value={chatInput}
               onChange={(e) => onChatInputChange(e.target.value)}
@@ -72,51 +72,44 @@ export default function ChatView({
               }}
               rows={1}
             />
-            <div className="input-controls-bottom">
-              <div className="model-selector-wrapper">
-                <button className="model-selector-btn" onClick={() => {}}>
-                  <span className="model-avatar">AI</span>
-                  <span className="model-text">{selectedModel === 'sonnet' ? 'Sonnet 4.5' : selectedModel === 'haiku' ? 'Haiku' : 'Qwen'}</span>
-                  <span className="model-arrow">▼</span>
-                </button>
-                <select
-                  className="hidden-model-select"
-                  value={selectedModel}
-                  onChange={(e) => onModelChange(e.target.value)}
-                >
-                  <option value="sonnet">Sonnet 4.5</option>
-                  <option value="haiku">Haiku</option>
-                  <option value="qwen">Qwen</option>
-                </select>
+
+            <div className="input-controls-inline">
+              <div className="config-pill-compact" onClick={() => {}}>
+                <span className="pill-icon">🤖</span>
+                <span className="pill-text">{selectedModel === 'sonnet' ? 'Sonnet 4.5' : selectedModel === 'haiku' ? 'Haiku 4.5' : 'Qwen'}</span>
               </div>
 
-              <div className="action-buttons-row">
-                <div className="reason-badge-display">
-                  <span className="reason-text">REASON</span>
-                  <span className="reason-number">2</span>
-                </div>
-                <button className="action-icon-btn export-btn" title="Export" onClick={() => {}}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                </button>
-                <button className="action-icon-btn send-btn-icon" onClick={() => onSendMessage()} title="Send">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-                </button>
+              <div className="config-pill-compact" onClick={() => {}}>
+                <span className="pill-icon">⚡</span>
+                <span className="pill-text">General</span>
               </div>
+
+              <div className="config-pill-compact" onClick={() => {}}>
+                <span className="pill-icon">🛠️</span>
+                <span className="pill-text">21 tools</span>
+              </div>
+
+              <button
+                className="icon-btn icon-btn-compact"
+                title="Attach file"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </button>
+
+              <button
+                className="send-btn-minimal"
+                onClick={onSendMessage}
+                disabled={!chatInput.trim()}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
             </div>
           </div>
-
-          {selectedTask?.status === 'pending' && (
-            <button className="start-task-btn" onClick={() => onStartTask(selectedModel)}>
-              ▶ Start Task
-            </button>
-          )}
         </div>
       </div>
     </>
