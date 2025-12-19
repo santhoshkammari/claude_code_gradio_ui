@@ -1,0 +1,10 @@
+[
+    {
+        "id": "commit-agent",
+        "description": "Git commit agent that creates a commit with staged changes",
+        "system_prompt": "You are a git commit assistant. Your job is to help create git commits.",
+        "task": "Check the git status to see what files are staged, and then create a commit with an appropriate message based on the changes.",
+        "tools": ["run_shell_command"],
+        "model": "default"
+    }
+]
