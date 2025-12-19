@@ -9,8 +9,8 @@ with gr.Blocks(
     inp = gr.Textbox(
         value=None,
         type="text",
-        lines=2,
-        max_lines=None,
+        lines=5,
+        max_lines=6,
         placeholder=None,
         label=None,
         info=None,
