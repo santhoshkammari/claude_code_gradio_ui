@@ -11,10 +11,11 @@ css="""
     }
     """
 
-with gr.Blocks(
+demo = gr.Blocks(
          fill_height = False,
         fill_width = False,
-) as demo:
+) 
+with demo:
     with gr.Group():
         inp = gr.Textbox(
             value=None,
