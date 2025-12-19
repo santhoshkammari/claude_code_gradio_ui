@@ -2,7 +2,10 @@ import gradio as gr
 def update(name):
     return f"Welcome to Gradio, {name}!"
 
-with gr.Blocks() as demo:
+with gr.Blocks(
+         fill_height = False,
+        fill_width = False,
+) as demo:
     inp = gr.Textbox(
         value=None,
         type="text",
