@@ -1,7 +1,7 @@
 import json
 import asyncio
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Optional
 import aiohttp
 from transformers.utils import get_json_schema
