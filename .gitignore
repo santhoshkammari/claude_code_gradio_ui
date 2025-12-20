@@ -1,4 +1,18 @@
 # Python bytecode
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+.env
+.DS_Store
+*.db
+logs/
+search_cache.db
+chats.db
 
