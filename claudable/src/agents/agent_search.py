@@ -187,17 +187,18 @@ If the document does not contain enough information, state that explicitly.
         {"role": "user", "content": f"Analyze the content in database ID {db_id} and extract information relevant to: {query}"}
     ]
 
-    result = await agent(
+    async for result in agent(
         lm=lm,
         history=history,
         tools=tools,
         max_iterations=25,
         logger=logger
-    )
+    ):
+        pass  # Iterate through all results
 
 
     conn.close()
-    return result['final_response']
+    return result.final_response
 
 
 async def final_answer_agent(doc_analyses: List[Dict[str, str]], query: str, lm: LM) -> str:
@@ -240,14 +241,15 @@ Here are the analyses from {len(doc_analyses)} different sources:
 Please synthesize these analyses into a comprehensive answer to the query."""}
     ]
 
-    result = await agent(
+    async for result in agent(
         lm=lm,
         history=history,
         tools=[],
         max_iterations=3
-    )
+    ):
+        pass  # Iterate through all results
 
-    return result['final_response']
+    return result.final_response
 
 
 # =============================================================================
