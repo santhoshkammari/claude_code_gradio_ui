@@ -1,9 +1,7 @@
 import contextvars
 
-# Core classes and functions
-from .lm import LM
 from .agent import (
-    gen, step, agent,
+    LM,gen, step, agent,
     AssistantResponse, ToolCall, StepResult, ToolResult
 )
 from .eval import (

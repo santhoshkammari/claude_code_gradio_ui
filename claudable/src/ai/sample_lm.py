@@ -6,7 +6,7 @@ Demonstrates the lm.py interface for streaming and batch LLM operations.
 
 import asyncio
 
-from .lm import LM
+from .agent import LM
 
 
 async def demo_stream_basic():
