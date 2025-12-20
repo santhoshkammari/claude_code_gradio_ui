@@ -1,71 +1,114 @@
 import asyncio
 import aiohttp
-import requests
 import json
+from typing import Optional
 
 class LM:
-    def __init__(self, model: str="", api_base="http://localhost:8000", api_key: str = "-"):
-        self.provider, self.model = model.split(":", 1) if ":" in model else ("vllm","")
+    def __init__(
+        self,
+        model: str = "",
+        api_base: str = "http://localhost:8000",
+        api_key: str = "-",
+        timeout: Optional[aiohttp.ClientTimeout] = None,
+    ):
+        self.provider, self.model = model.split(":", 1) if ":" in model else ("vllm", "")
         self.api_base = api_base
         self.api_key = api_key
 
-    async def stream(self, messages, tools=None, **params):
-        """Streaming interface for LLM"""
+        self._session: Optional[aiohttp.ClientSession] = None
 
-        # Handle string input
+        # Default timeout suitable for streaming
+        self._timeout = timeout or aiohttp.ClientTimeout(
+            total=None,     # streaming: no global timeout
+            connect=10,     # fail fast on connection issues
+            sock_read=None  # allow long token streams
+        )
+
+    # ---------- lifecycle ----------
+
+    async def start(self):
+        """Initialize shared HTTP session."""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession(timeout=self._timeout)
+
+    async def close(self):
+        """Close shared HTTP session."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+
+    def _require_session(self) -> aiohttp.ClientSession:
+        if self._session is None or self._session.closed:
+            raise RuntimeError("LM session not started. Call `await lm.start()` first.")
+        return self._session
+
+    # ---------- streaming ----------
+
+    async def stream(self, messages, tools=None, **params):
+        """Streaming interface for LLM."""
+
         if isinstance(messages, str):
             messages = [{"role": "user", "content": messages}]
 
-        async with aiohttp.ClientSession() as session:
-            # Build request body
-            body = {
-                "model": self.model,
-                "messages": messages,
-                "stream": True,
-                **params
-            }
+        session = self._require_session()
 
-            # Add tools if provided
-            if tools:
-                body["tools"] = tools
+        body = {
+            "model": self.model,
+            "messages": messages,
+            "stream": True,
+            **params,
+        }
 
-            # Stream response
+        if tools:
+            body["tools"] = tools
+
+        try:
             async with session.post(
                 f"{self.api_base}/v1/chat/completions",
-                json=body
+                json=body,
             ) as resp:
+                resp.raise_for_status()
+
                 async for line in resp.content:
                     line = line.decode().strip()
 
-                    # Skip empty lines and done marker
                     if not line or line == "data: [DONE]":
                         continue
 
-                    # Parse SSE format
                     if line.startswith("data: "):
-                        data = json.loads(line[6:])
-                        yield data
+                        yield json.loads(line[6:])
+
+        except asyncio.CancelledError:
+            # Client disconnected / request cancelled
+            raise
+
+    # ---------- batch ----------
 
     async def batch(self, messages_batch, **params):
-        """Handle batch of conversations asynchronously"""
+        """Handle batch of conversations asynchronously."""
+        session = self._require_session()
+
         async def _single(messages):
-            # Handle string input
             if isinstance(messages, str):
                 messages = [{"role": "user", "content": messages}]
 
-            async with aiohttp.ClientSession() as session:
-                body = {"model": self.model, "messages": messages, **params}
-                async with session.post(f"{self.api_base}/v1/chat/completions", json=body) as resp:
-                    data = await resp.json()
-                    if resp.status >= 400:
-                        print(f"DEBUG: Error response: {data}")
-                        resp.raise_for_status()
-                    if "choices" not in data:
-                        print(f"DEBUG: Unexpected response structure: {data}")
-                    return data
+            body = {
+                "model": self.model,
+                "messages": messages,
+                **params,
+            }
+
+            async with session.post(
+                f"{self.api_base}/v1/chat/completions",
+                json=body,
+            ) as resp:
+                data = await resp.json()
+                if resp.status >= 400:
+                    raise RuntimeError(f"LLM error: {data}")
+                return data
 
         tasks = [_single(msgs) for msgs in messages_batch]
         return await asyncio.gather(*tasks, return_exceptions=True)
+
 
 
 """

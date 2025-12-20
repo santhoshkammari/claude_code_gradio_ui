@@ -22,7 +22,7 @@ from src.logger.logger import get_logger
 from scrapling import Fetcher, DynamicFetcher, StealthyFetcher
 from scrapling.core.shell import Convertor
 
-logger = get_logger(__name__,level="CRITICAL")
+logger = get_logger(__name__,level='DEBUG')
 
 # Configuration
 MAX_SEARCH_RESULTS = 4
@@ -270,6 +270,7 @@ async def search_agent(query: str, max_results: int = MAX_SEARCH_RESULTS) -> str
 
     # Initialize LM
     lm = LM(model="vllm:", api_base="http://192.168.170.76:8000")
+    await lm.start()  # Start the LM session
 
     print(f"🔍 Searching for: {query}")
 
@@ -418,6 +419,9 @@ async def search_agent(query: str, max_results: int = MAX_SEARCH_RESULTS) -> str
     # Step 4: Final synthesis
     print("🔮 Synthesizing final answer...")
     final_answer = await final_answer_agent(doc_analyses, query, lm)
+
+    # Cleanup: close LM session
+    await lm.close()
 
     print("✓ Search agent complete!")
     return final_answer
