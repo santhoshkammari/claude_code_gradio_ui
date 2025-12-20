@@ -153,9 +153,86 @@ class ChatController {
 
             const data = await response.json();
             this.renderMessages(data.messages);
+
+            // Check if the last message is from user and has no response yet
+            // This happens when a new chat is created and redirected here
+            if (data.messages.length > 0) {
+                const lastMessage = data.messages[data.messages.length - 1];
+                const hasResponse = data.messages.some(msg => msg.role === 'assistant');
+
+                if (lastMessage.role === 'user' && !hasResponse) {
+                    console.log('New chat detected - triggering initial response...');
+                    // Automatically trigger the response for the first message
+                    this.processInitialMessage(lastMessage.content);
+                }
+            }
         } catch (error) {
             console.error('Error loading messages:', error);
             this.addMessage('assistant', 'Error loading chat history. Please try again.');
+        }
+    }
+
+    async processInitialMessage(message) {
+        // Add typing indicator
+        this.addTypingIndicator();
+        this.isStreaming = true;
+        this.updateSubmitButton();
+
+        try {
+            const response = await fetch(`/api/chat/${this.chatUuid}/message`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    option1: this.mode,
+                    option2: this.model
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Remove typing indicator
+            this.removeTypingIndicator();
+
+            // Create assistant message container
+            const assistantContent = this.addMessage('assistant', '', true);
+            const p = assistantContent.querySelector('p');
+
+            // Stream the response
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data === '[DONE]') {
+                            break;
+                        }
+                        p.textContent += data + ' ';
+                        this.scrollToBottom();
+                    }
+                }
+            }
+
+        } catch (error) {
+            this.removeTypingIndicator();
+            this.addMessage('assistant', `Error: ${error.message}`);
+            console.error('Error:', error);
+        } finally {
+            this.isStreaming = false;
+            this.updateSubmitButton();
         }
     }
 

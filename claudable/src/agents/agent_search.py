@@ -22,7 +22,7 @@ from src.logger.logger import get_logger
 from scrapling import Fetcher, DynamicFetcher, StealthyFetcher
 from scrapling.core.shell import Convertor
 
-logger = get_logger(__name__,level="CRITICAL")
+logger = get_logger(__name__,level='DEBUG')
 
 # Configuration
 MAX_SEARCH_RESULTS = 4

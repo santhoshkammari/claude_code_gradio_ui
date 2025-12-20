@@ -72,13 +72,16 @@ from src.agents.agent_search import search_agent
 
 
 @app.post("/claude")
-async def search_agent(request: ClaudeRequest):
+async def claude_search_endpoint(request: ClaudeRequest):
+    """
+    Direct search endpoint (not used in chat flow)
+    """
     async def generate_stream():
         response = await search_agent(request.message)
         words = response.split(' ')
         for word in words:
             yield f"data: {word} \n\n"
-            await asyncio.sleep(0.05) 
+            await asyncio.sleep(0.05)
 
         yield "data: [DONE]\n\n"
 
@@ -211,13 +214,23 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
 
-    # Add user message to database
-    db.add_message(chat_uuid, "user", request.message)
-    print("@@")
-    print(request.message)
+    # Check if this message is already in the database (to avoid duplicates on initial load)
+    messages = db.get_messages(chat_uuid)
+    last_message = messages[-1] if messages else None
+
+    # Only add user message if it's not already the last message
+    if not last_message or last_message['content'] != request.message or last_message['role'] != 'user':
+        db.add_message(chat_uuid, "user", request.message)
+        print(f"[CHAT {chat_uuid}] Added user message: {request.message}")
+    else:
+        print(f"[CHAT {chat_uuid}] User message already exists, skipping duplicate")
+
+    print(f"[CHAT {chat_uuid}] Mode: {request.option1}, Model: {request.option2}")
 
     async def generate_stream():
+        print(f"[CHAT {chat_uuid}] Starting search_agent...")
         response = await search_agent(request.message)
+        print(f"[CHAT {chat_uuid}] search_agent completed. Response length: {len(response)}")
 
         # Store the complete response
         complete_response = ""
@@ -230,6 +243,7 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
 
         # Save assistant's response to database
         db.add_message(chat_uuid, "assistant", complete_response.strip())
+        print(f"[CHAT {chat_uuid}] Response saved to database")
 
         yield "data: [DONE]\n\n"
 
