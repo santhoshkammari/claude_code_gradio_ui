@@ -26,8 +26,6 @@ class UIController {
         this.modelBtn = document.getElementById('model-btn');
         this.modelMenu = document.getElementById('model-menu');
         this.modelSelected = document.getElementById('model-selected');
-        this.responseContainer = document.getElementById('response-container');
-        this.responseContent = document.getElementById('response-content');
     }
 
     attachEventListeners() {
@@ -143,38 +141,34 @@ class UIController {
         const model = this.state.get('model');
 
         this.state.set('isStreaming', true);
-        this.showResponse();
-        this.clearResponseContent();
 
         try {
-            await this.api.sendMessage(message, mode, model, (chunk) => {
-                this.appendToResponse(chunk);
+            // Create a new chat session
+            const response = await fetch('/api/chat/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    option1: mode,
+                    option2: model
+                })
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Redirect to the chat page
+            window.location.href = `/chat/${data.chat_uuid}`;
         } catch (error) {
-            this.appendToResponse(`\n\nError: ${error.message}`);
             console.error('Error:', error);
-        } finally {
+            alert(`Error creating chat: ${error.message}`);
             this.state.set('isStreaming', false);
         }
-
-        // Clear form
-        this.messageInput.value = '';
-        this.fileInput.value = '';
-        this.state.set('files', []);
-        this.updateSubmitButton();
-    }
-
-    showResponse() {
-        this.responseContainer.classList.add('visible');
-    }
-
-    clearResponseContent() {
-        this.responseContent.textContent = '';
-    }
-
-    appendToResponse(text) {
-        this.responseContent.textContent += text;
-        this.responseContainer.scrollTop = this.responseContainer.scrollHeight;
     }
 }
 

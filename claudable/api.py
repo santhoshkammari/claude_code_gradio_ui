@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -9,9 +9,11 @@ from typing import Optional
 import asyncio
 from pathlib import Path
 from src.mcp_tools.web import async_web_search
+from database import ChatDatabase
 
 
 app = FastAPI(title="Claude API", version="1.0.0")
+db = ChatDatabase()
 
 # Mount static files directory
 static_dir = Path(__file__).parent / "static"
@@ -124,6 +126,128 @@ async def web_search_endpoint(request: WebSearchRequest):
     try:
         results = await async_web_search(request.query, request.max_results)
         return {"query": request.query, "results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# New Chat Session Endpoints
+
+@app.post("/api/chat/create")
+async def create_chat(request: ClaudeRequest):
+    """
+    Create a new chat session with the first message
+    Returns the chat UUID
+    """
+    try:
+        # Generate title from first message
+        title = db.generate_title_from_message(request.message)
+
+        # Create chat session
+        chat_uuid = db.create_chat(title=title)
+
+        # Add user message
+        db.add_message(chat_uuid, "user", request.message)
+
+        return JSONResponse({
+            "chat_uuid": chat_uuid,
+            "title": title
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/chat/{chat_uuid}")
+async def serve_chat_page(chat_uuid: str):
+    """
+    Serve the chat page for a specific chat session
+    """
+    # Verify chat exists
+    chat = db.get_chat(chat_uuid)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    html_path = Path(__file__).parent / "chat.html"
+    return FileResponse(html_path)
+
+
+@app.get("/api/chats")
+async def get_all_chats():
+    """
+    Get all chat sessions
+    """
+    try:
+        chats = db.get_all_chats()
+        return JSONResponse({"chats": chats})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/chat/{chat_uuid}/messages")
+async def get_chat_messages(chat_uuid: str):
+    """
+    Get all messages for a specific chat
+    """
+    try:
+        chat = db.get_chat(chat_uuid)
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+
+        messages = db.get_messages(chat_uuid)
+        return JSONResponse({
+            "chat": chat,
+            "messages": messages
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/chat/{chat_uuid}/message")
+async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
+    """
+    Send a message to an existing chat and stream the response
+    """
+    # Verify chat exists
+    chat = db.get_chat(chat_uuid)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    # Add user message to database
+    db.add_message(chat_uuid, "user", request.message)
+    print("@@")
+    print(request.message)
+
+    async def generate_stream():
+        response = await search_agent(request.message)
+
+        # Store the complete response
+        complete_response = ""
+
+        words = response.split(' ')
+        for word in words:
+            complete_response += word + " "
+            yield f"data: {word} \n\n"
+            await asyncio.sleep(0.05)
+
+        # Save assistant's response to database
+        db.add_message(chat_uuid, "assistant", complete_response.strip())
+
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(generate_stream(), media_type="text/event-stream")
+
+
+@app.delete("/api/chat/{chat_uuid}")
+async def delete_chat(chat_uuid: str):
+    """
+    Delete a chat session
+    """
+    try:
+        chat = db.get_chat(chat_uuid)
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+
+        db.delete_chat(chat_uuid)
+        return JSONResponse({"message": "Chat deleted successfully"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
