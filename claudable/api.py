@@ -66,31 +66,20 @@ async def claude_message(request: MessageRequest):
     pass
 
 
+from src.agents.agent_search import search_agent
+
+
 @app.post("/claude")
 async def claude_endpoint(request: ClaudeRequest):
     """
     Claude streaming endpoint that mimics LLM token-by-token response
     Later this will be replaced with actual LLM integration
     """
+    
+    
     async def generate_stream():
-        # Dummy response that will be streamed token by token
-        dummy_response = f"""Hello! I received your message: "{request.message}"
-
-You selected:
-- Mode: {request.option1}
-- Model: {request.option2}
-
-This is a dummy streaming response to demonstrate the streaming functionality.
-In the future, this will be replaced with actual LLM responses from Claude or Qwen.
-
-The system is working correctly and ready for integration with real language models.
-Each word is being streamed token by token to simulate real LLM behavior.
-This provides a smooth user experience with progressive text rendering.
-
-Thank you for testing the Claudable interface!"""
-
-        # Split into words and stream with delay
-        words = dummy_response.split(' ')
+        response = await search_agent(request.message)
+        words = response.split(' ')
         for word in words:
             yield f"data: {word} \n\n"
             await asyncio.sleep(0.05)  # Simulate processing delay
@@ -100,7 +89,7 @@ Thank you for testing the Claudable interface!"""
     return StreamingResponse(generate_stream(), media_type="text/event-stream")
 
 @app.post("/sample")
-async def claude_endpoint(request: ClaudeRequest):
+async def sample(request: ClaudeRequest):
     """
     Claude streaming endpoint that mimics LLM token-by-token response
     Later this will be replaced with actual LLM integration
