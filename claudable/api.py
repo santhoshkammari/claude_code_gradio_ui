@@ -70,19 +70,13 @@ from src.agents.agent_search import search_agent
 
 
 @app.post("/claude")
-async def claude_endpoint(request: ClaudeRequest):
-    """
-    Claude streaming endpoint that mimics LLM token-by-token response
-    Later this will be replaced with actual LLM integration
-    """
-    
-    
+async def search_agent(request: ClaudeRequest):
     async def generate_stream():
         response = await search_agent(request.message)
         words = response.split(' ')
         for word in words:
             yield f"data: {word} \n\n"
-            await asyncio.sleep(0.05)  # Simulate processing delay
+            await asyncio.sleep(0.05) 
 
         yield "data: [DONE]\n\n"
 
