@@ -259,9 +259,11 @@ Right now, you've provided:
         for i in range(len(token_ids)):
             # Decode accumulated buffer (all tokens up to current position)
             buffer = encoding.decode(token_ids[:i+1])
+            # Escape newlines for SSE format (use a placeholder)
+            escaped_buffer = buffer.replace('\n', '\\n')
             # Yield the entire buffer
-            yield f"data: {buffer}\n\n"
-            await asyncio.sleep(0.02)
+            yield f"data: {escaped_buffer}\n\n"
+            await asyncio.sleep(0.05)
 
         # Store the complete response
         complete_response = response

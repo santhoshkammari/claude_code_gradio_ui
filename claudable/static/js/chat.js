@@ -253,17 +253,19 @@ class ChatController {
                             break;
                         }
                         if (data !== '') {
+                            // Unescape newlines from SSE format
+                            const unescapedData = data.replace(/\\n/g, '\n');
                             // Data already contains the full accumulated buffer from API
                             // Just render it as markdown
                             try {
-                                const html = marked.parse(data);
+                                const html = marked.parse(unescapedData);
                                 assistantContent.innerHTML = html;
                                 assistantContent.querySelectorAll('pre code').forEach((block) => {
                                     hljs.highlightElement(block);
                                 });
                             } catch (err) {
                                 // If parsing fails, show as plain text
-                                assistantContent.textContent = data;
+                                assistantContent.textContent = unescapedData;
                             }
                             this.scrollToBottom();
                         }
@@ -473,17 +475,19 @@ class ChatController {
                             break;
                         }
                         if (data !== '') {
+                            // Unescape newlines from SSE format
+                            const unescapedData = data.replace(/\\n/g, '\n');
                             // Data already contains the full accumulated buffer from API
                             // Just render it as markdown
                             try {
-                                const html = marked.parse(data);
+                                const html = marked.parse(unescapedData);
                                 assistantContent.innerHTML = html;
                                 assistantContent.querySelectorAll('pre code').forEach((block) => {
                                     hljs.highlightElement(block);
                                 });
                             } catch (err) {
                                 // If parsing fails, show as plain text
-                                assistantContent.textContent = data;
+                                assistantContent.textContent = unescapedData;
                             }
                             this.scrollToBottom();
                         }
