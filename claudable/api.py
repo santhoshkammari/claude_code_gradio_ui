@@ -52,7 +52,11 @@ async def read_root():
     Serve the main HTML page
     """
     html_path = Path(__file__).parent / "index.html"
-    return FileResponse(html_path)
+    response = FileResponse(html_path)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 @app.get("/health")
@@ -170,7 +174,11 @@ async def serve_chat_page(chat_uuid: str):
         raise HTTPException(status_code=404, detail="Chat not found")
 
     html_path = Path(__file__).parent / "chat.html"
-    return FileResponse(html_path)
+    response = FileResponse(html_path)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 @app.get("/api/chats")
@@ -222,8 +230,10 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
     if not last_message or last_message['content'] != request.message or last_message['role'] != 'user':
         db.add_message(chat_uuid, "user", request.message)
         print(f"[CHAT {chat_uuid}] Added user message: {request.message}")
+        message_added = True
     else:
         print(f"[CHAT {chat_uuid}] User message already exists, skipping duplicate")
+        message_added = False
 
     print(f"[CHAT {chat_uuid}] Mode: {request.option1}, Model: {request.option2}")
 
@@ -234,7 +244,7 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
 ## ⚠️ One important thing is missing
 To act as **Scout**, I need the **actual user query** to analyze.
 
-Right now, you’ve provided:
+Right now, you've provided:
 - ✅ the role (Scout)
 - ✅ the rules and process
 - ✅ the output format
@@ -252,9 +262,12 @@ Right now, you’ve provided:
             yield f"data: {word} \n\n"
             await asyncio.sleep(0.01)
 
-        # Save assistant's response to database
-        db.add_message(chat_uuid, "assistant", complete_response.strip())
-        print(f"[CHAT {chat_uuid}] Response saved to database")
+        # Only save assistant's response to database if we added the user message
+        if message_added:
+            db.add_message(chat_uuid, "assistant", complete_response.strip())
+            print(f"[CHAT {chat_uuid}] Response saved to database")
+        else:
+            print(f"[CHAT {chat_uuid}] Skipping assistant response save (message already existed)")
 
         yield "data: [DONE]\n\n"
 

@@ -122,19 +122,24 @@ class ChatDatabase:
         conn = self.get_connection()
         cursor = conn.cursor()
 
-        cursor.execute(
-            "INSERT INTO messages (chat_uuid, role, content) VALUES (?, ?, ?)",
-            (chat_uuid, role, content)
-        )
+        try:
+            cursor.execute(
+                "INSERT INTO messages (chat_uuid, role, content) VALUES (?, ?, ?)",
+                (chat_uuid, role, content)
+            )
 
-        # Update chat's updated_at timestamp
-        cursor.execute(
-            "UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE uuid = ?",
-            (chat_uuid,)
-        )
+            # Update chat's updated_at timestamp
+            cursor.execute(
+                "UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE uuid = ?",
+                (chat_uuid,)
+            )
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
 
     def get_messages(self, chat_uuid: str) -> List[Dict]:
         """Get all messages for a chat"""

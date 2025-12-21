@@ -154,13 +154,19 @@ class ChatController {
             const data = await response.json();
             this.renderMessages(data.messages);
 
-            // Check if the last message is from user and has no response yet
+            // Check if the last message is from user and has no corresponding assistant response yet
             // This happens when a new chat is created and redirected here
             if (data.messages.length > 0) {
                 const lastMessage = data.messages[data.messages.length - 1];
-                const hasResponse = data.messages.some(msg => msg.role === 'assistant');
 
-                if (lastMessage.role === 'user' && !hasResponse) {
+                // Only trigger initial response if:
+                // 1. Last message is from user
+                // 2. No assistant message exists in the entire chat
+                // 3. This is likely a new chat (only one message exists, which is the user's)
+                const hasResponse = data.messages.some(msg => msg.role === 'assistant');
+                const isNewChat = data.messages.length === 1 && lastMessage.role === 'user';
+
+                if (isNewChat && !hasResponse) {
                     console.log('New chat detected - triggering initial response...');
                     // Automatically trigger the response for the first message
                     this.processInitialMessage(lastMessage.content);
@@ -220,8 +226,10 @@ class ChatController {
                         if (data === '[DONE]') {
                             break;
                         }
-                        p.textContent += data + ' ';
-                        this.scrollToBottom();
+                        if (data.trim() !== '') {
+                            p.textContent += data + ' ';
+                            this.scrollToBottom();
+                        }
                     }
                 }
             }
@@ -352,7 +360,7 @@ class ChatController {
 
     async handleSubmit() {
         const message = this.messageInput.value.trim();
-        if (!message) return;
+        if (!message || this.isStreaming) return;
 
         // Add user message to UI
         this.addMessage('user', message);
@@ -411,8 +419,10 @@ class ChatController {
                         if (data === '[DONE]') {
                             break;
                         }
-                        p.textContent += data + ' ';
-                        this.scrollToBottom();
+                        if (data.trim() !== '') {
+                            p.textContent += data + ' ';
+                            this.scrollToBottom();
+                        }
                     }
                 }
             }
