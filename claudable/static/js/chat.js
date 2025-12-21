@@ -5,6 +5,7 @@ class ChatController {
         this.mode = 'claudecode';
         this.model = 'Claude Sonnet 4.5';
         this.isStreaming = false;
+        this.renderTimeout = null;
         this.configureMarked();
         this.init();
     }
@@ -258,24 +259,26 @@ class ChatController {
                         if (data !== '') {
                             // Append token directly (spaces and newlines are already in the tokens)
                             markdownContent += data;
-                            // Re-render the markdown
-                            try {
-                                const html = marked.parse(markdownContent);
-                                assistantContent.innerHTML = html;
-                                // Apply syntax highlighting to code blocks
-                                assistantContent.querySelectorAll('pre code').forEach((block) => {
-                                    hljs.highlightElement(block);
-                                });
-                            } catch (err) {
-                                console.error('Markdown parsing error:', err);
-                                console.log('Markdown content:', markdownContent);
-                                // If markdown parsing fails, show as plain text
-                                assistantContent.textContent = markdownContent;
-                            }
-                            this.scrollToBottom();
+                            // Use debounced rendering to avoid partial emoji/character issues
+                            this.renderMarkdown(assistantContent, markdownContent);
                         }
                     }
                 }
+            }
+
+            // Final render to ensure everything is displayed
+            if (this.renderTimeout) {
+                clearTimeout(this.renderTimeout);
+            }
+            try {
+                const html = marked.parse(markdownContent);
+                assistantContent.innerHTML = html;
+                assistantContent.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            } catch (err) {
+                console.error('Final markdown render error:', err);
+                assistantContent.textContent = markdownContent;
             }
 
         } catch (error) {
@@ -419,6 +422,28 @@ class ChatController {
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
 
+    renderMarkdown(element, markdown) {
+        // Debounced markdown rendering to avoid partial emoji issues
+        if (this.renderTimeout) {
+            clearTimeout(this.renderTimeout);
+        }
+
+        this.renderTimeout = setTimeout(() => {
+            try {
+                const html = marked.parse(markdown);
+                element.innerHTML = html;
+                // Apply syntax highlighting to code blocks
+                element.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            } catch (err) {
+                console.error('Markdown parsing error:', err);
+                element.textContent = markdown;
+            }
+            this.scrollToBottom();
+        }, 50); // 50ms debounce
+    }
+
     async handleSubmit() {
         const message = this.messageInput.value.trim();
         if (!message || this.isStreaming) return;
@@ -485,24 +510,26 @@ class ChatController {
                         if (data !== '') {
                             // Append token directly (spaces and newlines are already in the tokens)
                             markdownContent += data;
-                            // Re-render the markdown
-                            try {
-                                const html = marked.parse(markdownContent);
-                                assistantContent.innerHTML = html;
-                                // Apply syntax highlighting to code blocks
-                                assistantContent.querySelectorAll('pre code').forEach((block) => {
-                                    hljs.highlightElement(block);
-                                });
-                            } catch (err) {
-                                console.error('Markdown parsing error:', err);
-                                console.log('Markdown content:', markdownContent);
-                                // If markdown parsing fails, show as plain text
-                                assistantContent.textContent = markdownContent;
-                            }
-                            this.scrollToBottom();
+                            // Use debounced rendering to avoid partial emoji/character issues
+                            this.renderMarkdown(assistantContent, markdownContent);
                         }
                     }
                 }
+            }
+
+            // Final render to ensure everything is displayed
+            if (this.renderTimeout) {
+                clearTimeout(this.renderTimeout);
+            }
+            try {
+                const html = marked.parse(markdownContent);
+                assistantContent.innerHTML = html;
+                assistantContent.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            } catch (err) {
+                console.error('Final markdown render error:', err);
+                assistantContent.textContent = markdownContent;
             }
 
         } catch (error) {
