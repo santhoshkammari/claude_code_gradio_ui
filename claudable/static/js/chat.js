@@ -260,12 +260,15 @@ class ChatController {
                             markdownContent += data;
                             // Re-render the markdown
                             try {
-                                assistantContent.innerHTML = marked.parse(markdownContent);
+                                const html = marked.parse(markdownContent);
+                                assistantContent.innerHTML = html;
                                 // Apply syntax highlighting to code blocks
                                 assistantContent.querySelectorAll('pre code').forEach((block) => {
                                     hljs.highlightElement(block);
                                 });
                             } catch (err) {
+                                console.error('Markdown parsing error:', err);
+                                console.log('Markdown content:', markdownContent);
                                 // If markdown parsing fails, show as plain text
                                 assistantContent.textContent = markdownContent;
                             }
@@ -484,12 +487,15 @@ class ChatController {
                             markdownContent += data;
                             // Re-render the markdown
                             try {
-                                assistantContent.innerHTML = marked.parse(markdownContent);
+                                const html = marked.parse(markdownContent);
+                                assistantContent.innerHTML = html;
                                 // Apply syntax highlighting to code blocks
                                 assistantContent.querySelectorAll('pre code').forEach((block) => {
                                     hljs.highlightElement(block);
                                 });
                             } catch (err) {
+                                console.error('Markdown parsing error:', err);
+                                console.log('Markdown content:', markdownContent);
                                 // If markdown parsing fails, show as plain text
                                 assistantContent.textContent = markdownContent;
                             }

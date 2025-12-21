@@ -240,17 +240,14 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
     async def generate_stream():
         print(f"[CHAT {chat_uuid}] Starting search_agent...")
         # response = await search_agent(request.message)
-        response = """
-## ⚠️ One important thing is missing
+        response = """## ⚠️ One important thing is missing
 To act as **Scout**, I need the **actual user query** to analyze.
 
 Right now, you've provided:
 - ✅ the role (Scout)
 - ✅ the rules and process
 - ✅ the output format
-- ❌ but **not the query Scout is supposed to interpret**
-
-"""
+- ❌ but **not the query Scout is supposed to interpret**"""
         print(f"[CHAT {chat_uuid}] search_agent completed. Response length: {len(response)}")
 
         # Store the complete response
