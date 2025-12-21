@@ -5,7 +5,34 @@ class ChatController {
         this.mode = 'claudecode';
         this.model = 'Claude Sonnet 4.5';
         this.isStreaming = false;
+        this.configureMarked();
         this.init();
+    }
+
+    configureMarked() {
+        // Configure marked.js for GitHub-flavored markdown
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({
+                gfm: true,
+                breaks: true,
+                headerIds: true,
+                mangle: false,
+                sanitize: false,
+                smartLists: true,
+                smartypants: false,
+                xhtml: false,
+                highlight: function(code, lang) {
+                    if (lang && hljs.getLanguage(lang)) {
+                        try {
+                            return hljs.highlight(code, { language: lang }).value;
+                        } catch (err) {
+                            console.error('Highlight error:', err);
+                        }
+                    }
+                    return hljs.highlightAuto(code).value;
+                }
+            });
+        }
     }
 
     extractChatUuid() {
@@ -206,7 +233,9 @@ class ChatController {
 
             // Create assistant message container
             const assistantContent = this.addMessage('assistant', '', true);
-            const p = assistantContent.querySelector('p');
+
+            // Store accumulated markdown content
+            let markdownContent = '';
 
             // Stream the response
             const reader = response.body.getReader();
@@ -226,8 +255,23 @@ class ChatController {
                         if (data === '[DONE]') {
                             break;
                         }
-                        if (data.trim() !== '') {
-                            p.textContent += data + ' ';
+                        if (data !== '') {
+                            // Add space before word, but preserve newlines within the data
+                            if (markdownContent && !markdownContent.endsWith('\n') && !data.startsWith('\n')) {
+                                markdownContent += ' ';
+                            }
+                            markdownContent += data;
+                            // Re-render the markdown
+                            try {
+                                assistantContent.innerHTML = marked.parse(markdownContent);
+                                // Apply syntax highlighting to code blocks
+                                assistantContent.querySelectorAll('pre code').forEach((block) => {
+                                    hljs.highlightElement(block);
+                                });
+                            } catch (err) {
+                                // If markdown parsing fails, show as plain text
+                                assistantContent.textContent = markdownContent;
+                            }
                             this.scrollToBottom();
                         }
                     }
@@ -317,12 +361,29 @@ class ChatController {
         messageDiv.className = `message message-${role}`;
 
         const contentDiv = document.createElement('div');
-        contentDiv.className = 'message-content';
+        contentDiv.className = 'message-content markdown-body';
 
-        const p = document.createElement('p');
-        p.textContent = content;
+        // For assistant messages, render as markdown
+        if (role === 'assistant' && content) {
+            try {
+                contentDiv.innerHTML = marked.parse(content);
+                // Apply syntax highlighting to code blocks
+                contentDiv.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            } catch (err) {
+                console.error('Markdown parse error:', err);
+                const p = document.createElement('p');
+                p.textContent = content;
+                contentDiv.appendChild(p);
+            }
+        } else {
+            // For user messages, use plain text
+            const p = document.createElement('p');
+            p.textContent = content;
+            contentDiv.appendChild(p);
+        }
 
-        contentDiv.appendChild(p);
         messageDiv.appendChild(contentDiv);
         this.messagesContainer.appendChild(messageDiv);
 
@@ -399,7 +460,9 @@ class ChatController {
 
             // Create assistant message container
             const assistantContent = this.addMessage('assistant', '', true);
-            const p = assistantContent.querySelector('p');
+
+            // Store accumulated markdown content
+            let markdownContent = '';
 
             // Stream the response
             const reader = response.body.getReader();
@@ -419,8 +482,23 @@ class ChatController {
                         if (data === '[DONE]') {
                             break;
                         }
-                        if (data.trim() !== '') {
-                            p.textContent += data + ' ';
+                        if (data !== '') {
+                            // Add space before word, but preserve newlines within the data
+                            if (markdownContent && !markdownContent.endsWith('\n') && !data.startsWith('\n')) {
+                                markdownContent += ' ';
+                            }
+                            markdownContent += data;
+                            // Re-render the markdown
+                            try {
+                                assistantContent.innerHTML = marked.parse(markdownContent);
+                                // Apply syntax highlighting to code blocks
+                                assistantContent.querySelectorAll('pre code').forEach((block) => {
+                                    hljs.highlightElement(block);
+                                });
+                            } catch (err) {
+                                // If markdown parsing fails, show as plain text
+                                assistantContent.textContent = markdownContent;
+                            }
                             this.scrollToBottom();
                         }
                     }

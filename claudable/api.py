@@ -257,9 +257,13 @@ Right now, you've provided:
         complete_response = ""
 
         words = response.split(' ')
-        for word in words:
-            complete_response += word + " "
-            yield f"data: {word} \n\n"
+        for i, word in enumerate(words):
+            # Add space only if not the last word and word doesn't end with newline
+            if i < len(words) - 1:
+                complete_response += word + " "
+            else:
+                complete_response += word
+            yield f"data: {word}\n\n"
             await asyncio.sleep(0.01)
 
         # Only save assistant's response to database if we added the user message
