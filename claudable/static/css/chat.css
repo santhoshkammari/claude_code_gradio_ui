@@ -131,7 +131,7 @@ body {
     flex-direction: column;
     height: 100vh;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    padding: 20px 20px 0px 20px; /* Add padding on all sides, reduce bottom padding */
+    padding: 20px 20px 0px 20px; /* Add padding on all sides, keep bottom padding as 0 */
 }
 
 .sidebar.open ~ .sidebar-toggle ~ .chat-container {
@@ -161,8 +161,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    margin-bottom: 20px; /* Increase space between messages and input */
-    max-height: calc(100vh - 200px); /* Limit height to ensure space for input and padding */
+    margin-bottom: 0; /* Zero space between messages and input */
+    max-height: calc(100vh - 158px); /* Adjusted height to allow zero space */
 }
 
 .message {
@@ -207,13 +207,13 @@ body {
 .input-container {
     max-width: 900px; /* Increase width */
     width: 60%;
-    margin: 0 auto 0; /* Reduce bottom margin to half */
+    margin: 0 auto 0; /* Zero bottom margin */
     background: rgb(255, 255, 255);
     border-radius: 20px;
     border: 1px solid rgb(229, 231, 235);
     border-top: none;
     box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
-    padding: 12px;
+    padding: 8px; /* Reduced padding to balance the increased input height */
     transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative; /* Ensure proper positioning */
 }
@@ -224,7 +224,7 @@ body {
 
 #message-input {
     width: 100%;
-    min-height: 24px;
+    min-height: 56px; /* Set to 56px as requested */
     max-height: 200px;
     border: none;
     outline: none;
