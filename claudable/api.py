@@ -256,15 +256,11 @@ Right now, you've provided:
         # Store the complete response
         complete_response = ""
 
-        words = response.split(' ')
-        for i, word in enumerate(words):
-            # Add space only if not the last word and word doesn't end with newline
-            if i < len(words) - 1:
-                complete_response += word + " "
-            else:
-                complete_response += word
-            yield f"data: {word}\n\n"
-            await asyncio.sleep(0.01)
+        # Stream character by character to preserve exact formatting
+        for char in response:
+            complete_response += char
+            yield f"data: {char}\n\n"
+            await asyncio.sleep(0.005)  # Faster since we're sending individual characters
 
         # Only save assistant's response to database if we added the user message
         if message_added:

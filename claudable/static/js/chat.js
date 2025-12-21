@@ -256,10 +256,7 @@ class ChatController {
                             break;
                         }
                         if (data !== '') {
-                            // Add space before word, but preserve newlines within the data
-                            if (markdownContent && !markdownContent.endsWith('\n') && !data.startsWith('\n')) {
-                                markdownContent += ' ';
-                            }
+                            // Append token directly (spaces and newlines are already in the tokens)
                             markdownContent += data;
                             // Re-render the markdown
                             try {
@@ -483,10 +480,7 @@ class ChatController {
                             break;
                         }
                         if (data !== '') {
-                            // Add space before word, but preserve newlines within the data
-                            if (markdownContent && !markdownContent.endsWith('\n') && !data.startsWith('\n')) {
-                                markdownContent += ' ';
-                            }
+                            // Append token directly (spaces and newlines are already in the tokens)
                             markdownContent += data;
                             // Re-render the markdown
                             try {
