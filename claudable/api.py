@@ -10,6 +10,7 @@ import asyncio
 from pathlib import Path
 from src.mcp_tools.web import async_web_search
 from database import ChatDatabase
+import tiktoken
 
 
 app = FastAPI(title="Claude API", version="1.0.0")
@@ -253,11 +254,25 @@ Right now, you've provided:
         # Store the complete response
         complete_response = ""
 
-        # Stream character by character to preserve exact formatting
-        for char in response:
-            complete_response += char
-            yield f"data: {char}\n\n"
-            await asyncio.sleep(0.005)  # Faster since we're sending individual characters
+        # Use tiktoken to encode text into tokens, then decode back to get token strings
+        encoding = tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
+        token_ids = encoding.encode(response)
+
+        # Stream token by token
+        current_text = ""
+        for i, token_id in enumerate(token_ids):
+            # Decode up to current position to get the cumulative text
+            current_text = encoding.decode(token_ids[:i+1])
+            # Get just the new token text
+            if i > 0:
+                previous_text = encoding.decode(token_ids[:i])
+                token_text = current_text[len(previous_text):]
+            else:
+                token_text = current_text
+
+            complete_response += token_text
+            yield f"data: {token_text}\n\n"
+            await asyncio.sleep(0.02)  # Slower since tokens are larger than characters
 
         # Only save assistant's response to database if we added the user message
         if message_added:
