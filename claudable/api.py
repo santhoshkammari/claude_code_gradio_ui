@@ -12,6 +12,14 @@ from src.mcp_tools.web import async_web_search
 from database import ChatDatabase
 import tiktoken
 
+DUMMY_RESPONSE = """## ⚠️ One important thing is missing
+To act as **Scout**, I need the **actual user query** to analyze.
+
+Right now, you've provided:
+- ✅ the role (Scout)
+- ✅ the rules and process
+- ✅ the output format
+- ❌ but **not the query Scout is supposed to interpret**"""
 
 app = FastAPI(title="Claude API", version="1.0.0")
 db = ChatDatabase()
@@ -240,16 +248,7 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
 
     async def generate_stream():
         print(f"[CHAT {chat_uuid}] Starting search_agent...")
-        # response = await search_agent(request.message)
-        response = """## ⚠️ One important thing is missing
-To act as **Scout**, I need the **actual user query** to analyze.
-
-Right now, you've provided:
-- ✅ the role (Scout)
-- ✅ the rules and process
-- ✅ the output format
-- ❌ but **not the query Scout is supposed to interpret**"""
-        print(f"[CHAT {chat_uuid}] search_agent completed. Response length: {len(response)}")
+        response = await search_agent(request.message)
 
         # Use tiktoken to encode text into tokens
         encoding = tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
