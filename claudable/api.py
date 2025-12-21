@@ -229,7 +229,18 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
 
     async def generate_stream():
         print(f"[CHAT {chat_uuid}] Starting search_agent...")
-        response = await search_agent(request.message)
+        # response = await search_agent(request.message)
+        response = """
+## ⚠️ One important thing is missing
+To act as **Scout**, I need the **actual user query** to analyze.
+
+Right now, you’ve provided:
+- ✅ the role (Scout)
+- ✅ the rules and process
+- ✅ the output format
+- ❌ but **not the query Scout is supposed to interpret**
+
+"""
         print(f"[CHAT {chat_uuid}] search_agent completed. Response length: {len(response)}")
 
         # Store the complete response
@@ -239,7 +250,7 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
         for word in words:
             complete_response += word + " "
             yield f"data: {word} \n\n"
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.01)
 
         # Save assistant's response to database
         db.add_message(chat_uuid, "assistant", complete_response.strip())
@@ -264,7 +275,6 @@ async def delete_chat(chat_uuid: str):
         return JSONResponse({"message": "Chat deleted successfully"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 if __name__ == "__main__":
     import uvicorn
