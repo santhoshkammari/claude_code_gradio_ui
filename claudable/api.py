@@ -251,28 +251,20 @@ Right now, you've provided:
 - ❌ but **not the query Scout is supposed to interpret**"""
         print(f"[CHAT {chat_uuid}] search_agent completed. Response length: {len(response)}")
 
-        # Store the complete response
-        complete_response = ""
-
-        # Use tiktoken to encode text into tokens, then decode back to get token strings
+        # Use tiktoken to encode text into tokens
         encoding = tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
         token_ids = encoding.encode(response)
 
-        # Stream token by token
-        current_text = ""
-        for i, token_id in enumerate(token_ids):
-            # Decode up to current position to get the cumulative text
-            current_text = encoding.decode(token_ids[:i+1])
-            # Get just the new token text
-            if i > 0:
-                previous_text = encoding.decode(token_ids[:i])
-                token_text = current_text[len(previous_text):]
-            else:
-                token_text = current_text
+        # Stream by yielding accumulated buffer on each token
+        for i in range(len(token_ids)):
+            # Decode accumulated buffer (all tokens up to current position)
+            buffer = encoding.decode(token_ids[:i+1])
+            # Yield the entire buffer
+            yield f"data: {buffer}\n\n"
+            await asyncio.sleep(0.02)
 
-            complete_response += token_text
-            yield f"data: {token_text}\n\n"
-            await asyncio.sleep(0.02)  # Slower since tokens are larger than characters
+        # Store the complete response
+        complete_response = response
 
         # Only save assistant's response to database if we added the user message
         if message_added:

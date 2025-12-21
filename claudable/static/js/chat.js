@@ -234,9 +234,6 @@ class ChatController {
             // Create assistant message container
             const assistantContent = this.addMessage('assistant', '', true);
 
-            // Store accumulated markdown content
-            let markdownContent = '';
-
             // Stream the response
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
@@ -256,18 +253,17 @@ class ChatController {
                             break;
                         }
                         if (data !== '') {
-                            // Append token to buffer
-                            markdownContent += data;
-                            // Render the ENTIRE buffer as markdown (not individual tokens)
+                            // Data already contains the full accumulated buffer from API
+                            // Just render it as markdown
                             try {
-                                const html = marked.parse(markdownContent);
+                                const html = marked.parse(data);
                                 assistantContent.innerHTML = html;
                                 assistantContent.querySelectorAll('pre code').forEach((block) => {
                                     hljs.highlightElement(block);
                                 });
                             } catch (err) {
-                                // If parsing fails, show buffer as plain text
-                                assistantContent.textContent = markdownContent;
+                                // If parsing fails, show as plain text
+                                assistantContent.textContent = data;
                             }
                             this.scrollToBottom();
                         }
@@ -458,9 +454,6 @@ class ChatController {
             // Create assistant message container
             const assistantContent = this.addMessage('assistant', '', true);
 
-            // Store accumulated markdown content
-            let markdownContent = '';
-
             // Stream the response
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
@@ -480,18 +473,17 @@ class ChatController {
                             break;
                         }
                         if (data !== '') {
-                            // Append token to buffer
-                            markdownContent += data;
-                            // Render the ENTIRE buffer as markdown (not individual tokens)
+                            // Data already contains the full accumulated buffer from API
+                            // Just render it as markdown
                             try {
-                                const html = marked.parse(markdownContent);
+                                const html = marked.parse(data);
                                 assistantContent.innerHTML = html;
                                 assistantContent.querySelectorAll('pre code').forEach((block) => {
                                     hljs.highlightElement(block);
                                 });
                             } catch (err) {
-                                // If parsing fails, show buffer as plain text
-                                assistantContent.textContent = markdownContent;
+                                // If parsing fails, show as plain text
+                                assistantContent.textContent = data;
                             }
                             this.scrollToBottom();
                         }
