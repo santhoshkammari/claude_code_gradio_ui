@@ -659,7 +659,7 @@ async def create_session(request: CreateSessionRequest) -> CreateSessionResponse
             # allowed_tools=request.allowed_tools or profile_config["allowed_tools"],
             # system_prompt=request.system_prompt,
             # permission_mode=request.permission_mode or profile_config["permission_mode"],
-            permisson_mode="bypassPermissions",
+            permission_mode="bypassPermissions",
             model=request.model,
             cwd=request.cwd
         )
