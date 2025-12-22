@@ -28,7 +28,6 @@ class UIController {
         this.modelSelected = document.getElementById('model-selected');
         this.subtitle = document.getElementById('subtitle');
     }
-    }
 
     attachEventListeners() {
         // Upload button
@@ -64,7 +63,6 @@ class UIController {
                 this.updateSubtitle(value);
                 this.modeMenu.classList.remove('active');
             });
-        });
         });
 
         // Model dropdown items
@@ -132,22 +130,6 @@ class UIController {
             'citeria': 'Citeria'
         };
         return map[value] || value;
-    }
-
-    getSubtitle(value) {
-        const subtitles = {
-            'code': 'Intelligent coding assistant • Write better code • Debug faster',
-            'scout': 'Explore your codebase • Discover insights • Navigate effortlessly',
-            'citeria': 'Strategic code analysis • Quality standards • Smart evaluation'
-        };
-        return subtitles[value] || subtitles['code'];
-    }
-
-    updateSubtitle(value) {
-        if (this.subtitle) {
-            this.subtitle.textContent = this.getSubtitle(value);
-        }
-    }
     }
 
     getSubtitle(value) {
