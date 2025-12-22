@@ -1,5 +1,14 @@
 
-data =[
+
+from typing import Iterator, Dict, Any
+
+def claude(prompt: str,claude_session_id=None) -> Iterator[Dict[str, Any]]:
+    """
+    Mock response with the same formatting.
+    Yields entries from the predefined `data` list.
+    """
+    
+    data =[
   {
     "type": "system",
     "subtype": "init",
@@ -322,14 +331,9 @@ data =[
 ]
 
 
-from typing import Iterator, Dict, Any
-
-def claude(prompt: str) -> Iterator[Dict[str, Any]]:
-    """
-    Mock response with the same formatting.
-    Yields entries from the predefined `data` list.
-    """
     for entry in data:
         yield entry
+
+
 
 
