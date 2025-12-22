@@ -167,7 +167,6 @@ class ChatController {
         };
         return map[value] || value;
     }
-    }
 
     updateSubmitButton() {
         this.submitBtn.disabled = this.messageInput.value.trim().length === 0 || this.isStreaming;

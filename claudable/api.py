@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import base64
 import os
 from typing import Optional
 import asyncio
@@ -242,22 +243,22 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
         #response = await search_agent(request.message)
         response = DUMMY_RESPONSE
 
-        # Use tiktoken to encode text into tokens
-        encoding = tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
-        token_ids = encoding.encode(response)
+        # Split response into words/tokens for streaming
+        words = response.split(' ')
 
-        # Stream by yielding accumulated buffer on each token
-        for i in range(len(token_ids)):
-            # Decode accumulated buffer (all tokens up to current position)
-            buffer = encoding.decode(token_ids[:i+1])
+        # Stream each word/token
+        accumulated_response = []
+        for word in words:
+            accumulated_response.append(word)
+            # Send accumulated response so far
+            current_response = ' '.join(accumulated_response)
             # Escape newlines for SSE format (use a placeholder)
-            escaped_buffer = buffer.replace('\n', '\\n')
-            # Yield the entire buffer
-            yield f"data: {escaped_buffer}\n\n"
+            escaped_response = current_response.replace('\n', '\\n')
+            yield f"data: {escaped_response}\n\n"
             await asyncio.sleep(0.05)
 
         # Store the complete response
-        complete_response = response
+        complete_response = ' '.join(accumulated_response)
 
         # Save assistant's response to database
         db.add_message(chat_uuid, "assistant", complete_response.strip())
