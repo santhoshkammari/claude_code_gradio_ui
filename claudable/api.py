@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import os
-import anthropic
 from typing import Optional
 import asyncio
 from pathlib import Path
@@ -231,24 +230,17 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
 
-    # Check if this message is already in the database (to avoid duplicates on initial load)
-    messages = db.get_messages(chat_uuid)
-    last_message = messages[-1] if messages else None
-
-    # Only add user message if it's not already the last message
-    if not last_message or last_message['content'] != request.message or last_message['role'] != 'user':
-        db.add_message(chat_uuid, "user", request.message)
-        print(f"[CHAT {chat_uuid}] Added user message: {request.message}")
-        message_added = True
-    else:
-        print(f"[CHAT {chat_uuid}] User message already exists, skipping duplicate")
-        message_added = False
+    # Always add the user message regardless of duplicates
+    db.add_message(chat_uuid, "user", request.message)
+    print(f"[CHAT {chat_uuid}] Added user message: {request.message}")
+    message_added = True
 
     print(f"[CHAT {chat_uuid}] Mode: {request.option1}, Model: {request.option2}")
 
     async def generate_stream():
         print(f"[CHAT {chat_uuid}] Starting search_agent...")
-        response = await search_agent(request.message)
+        #response = await search_agent(request.message)
+        response = DUMMY_RESPONSE
 
         # Use tiktoken to encode text into tokens
         encoding = tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
@@ -267,12 +259,9 @@ async def send_message_to_chat(chat_uuid: str, request: ClaudeRequest):
         # Store the complete response
         complete_response = response
 
-        # Only save assistant's response to database if we added the user message
-        if message_added:
-            db.add_message(chat_uuid, "assistant", complete_response.strip())
-            print(f"[CHAT {chat_uuid}] Response saved to database")
-        else:
-            print(f"[CHAT {chat_uuid}] Skipping assistant response save (message already existed)")
+        # Save assistant's response to database
+        db.add_message(chat_uuid, "assistant", complete_response.strip())
+        print(f"[CHAT {chat_uuid}] Response saved to database")
 
         yield "data: [DONE]\n\n"
 
