@@ -27,6 +27,7 @@ class ChatDatabase:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 uuid TEXT UNIQUE NOT NULL,
                 title TEXT,
+                claude_session_id TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -155,6 +156,36 @@ class ChatDatabase:
         conn.close()
 
         return [dict(row) for row in rows]
+
+    def get_claude_session_id(self, chat_uuid: str) -> Optional[str]:
+        """Get the Claude session ID for a chat"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT claude_session_id FROM chats WHERE uuid = ?",
+            (chat_uuid,)
+        )
+
+        row = cursor.fetchone()
+        conn.close()
+
+        if row:
+            return row['claude_session_id']
+        return None
+
+    def set_claude_session_id(self, chat_uuid: str, session_id: str):
+        """Set the Claude session ID for a chat"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "UPDATE chats SET claude_session_id = ? WHERE uuid = ?",
+            (session_id, chat_uuid)
+        )
+
+        conn.commit()
+        conn.close()
 
     def delete_chat(self, chat_uuid: str):
         """Delete a chat and all its messages"""

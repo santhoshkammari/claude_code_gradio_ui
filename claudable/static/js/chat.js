@@ -3,7 +3,7 @@ class ChatController {
     constructor() {
         this.chatUuid = this.extractChatUuid();
         this.mode = 'code';
-        this.model = 'Claude Sonnet 4.5';
+        this.model = 'sonnet';
         this.isStreaming = false;
         this.configureMarked();
         this.init();
