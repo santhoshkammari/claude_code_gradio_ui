@@ -26,6 +26,8 @@ class UIController {
         this.modelBtn = document.getElementById('model-btn');
         this.modelMenu = document.getElementById('model-menu');
         this.modelSelected = document.getElementById('model-selected');
+        this.subtitle = document.getElementById('subtitle');
+    }
     }
 
     attachEventListeners() {
@@ -59,8 +61,10 @@ class UIController {
                 const value = item.getAttribute('data-value');
                 this.state.set('mode', value);
                 this.modeSelected.textContent = this.getDisplayName(value);
+                this.updateSubtitle(value);
                 this.modeMenu.classList.remove('active');
             });
+        });
         });
 
         // Model dropdown items
@@ -123,10 +127,42 @@ class UIController {
 
     getDisplayName(value) {
         const map = {
-            'claudecode': 'Claude Code',
-            'qwen': 'Qwen'
+            'code': 'Code',
+            'scout': 'Scout',
+            'citeria': 'Citeria'
         };
         return map[value] || value;
+    }
+
+    getSubtitle(value) {
+        const subtitles = {
+            'code': 'Intelligent coding assistant • Write better code • Debug faster',
+            'scout': 'Explore your codebase • Discover insights • Navigate effortlessly',
+            'citeria': 'Strategic code analysis • Quality standards • Smart evaluation'
+        };
+        return subtitles[value] || subtitles['code'];
+    }
+
+    updateSubtitle(value) {
+        if (this.subtitle) {
+            this.subtitle.textContent = this.getSubtitle(value);
+        }
+    }
+    }
+
+    getSubtitle(value) {
+        const subtitles = {
+            'code': 'Intelligent coding assistant • Write better code • Debug faster',
+            'scout': 'Explore your codebase • Discover insights • Navigate effortlessly',
+            'citeria': 'Strategic code analysis • Quality standards • Smart evaluation'
+        };
+        return subtitles[value] || subtitles['code'];
+    }
+
+    updateSubtitle(value) {
+        if (this.subtitle) {
+            this.subtitle.textContent = this.getSubtitle(value);
+        }
     }
 
     updateSubmitButton() {

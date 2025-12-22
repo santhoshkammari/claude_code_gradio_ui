@@ -2,7 +2,7 @@
 class ChatController {
     constructor() {
         this.chatUuid = this.extractChatUuid();
-        this.mode = 'claudecode';
+        this.mode = 'code';
         this.model = 'Claude Sonnet 4.5';
         this.isStreaming = false;
         this.configureMarked();
@@ -161,10 +161,12 @@ class ChatController {
 
     getDisplayName(value) {
         const map = {
-            'claudecode': 'Claude Code',
-            'qwen': 'Qwen'
+            'code': 'Code',
+            'scout': 'Scout',
+            'citeria': 'Citeria'
         };
         return map[value] || value;
+    }
     }
 
     updateSubmitButton() {

@@ -2,7 +2,7 @@
 class AppState {
     constructor() {
         this.data = {
-            mode: 'claudecode',
+            mode: 'code',
             model: 'Claude Sonnet 4.5',
             files: [],
             isStreaming: false
