@@ -444,9 +444,6 @@ async def handle_claude_request(chat_uuid: str, request: ClaudeRequest):
                     async for line in events_resp.content:
                         line_str = line.decode("utf-8")
                         logger.debug(f"[CLAUDE STREAM] Raw line received: {repr(line_str)}")
-                        print('@@@@@@',flush=True)
-                        print(line_str)
-                        print('@@@@@@',flush=True)
 
                         if line_str.startswith("data:"):
                             # Process the SSE data
@@ -760,9 +757,6 @@ async def stream_session_events(session_id: str):
             # Receive messages from Claude
             async for message in session_data.client.receive_messages():
                 # Convert message to JSON and send as SSE event
-                print('----------',flush=True)
-                print(f'{message=}')
-                print('----------',flush=True)
                 import json
 
                 def serialize_message(obj):
